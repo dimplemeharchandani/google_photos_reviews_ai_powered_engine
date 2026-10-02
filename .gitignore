@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS
+.DS_Store
+
+# Raw Play Store dump is large and can be re-fetched.
+backend/data/raw_data/google_photos_playstore_reviews.csv
+
+# Labelling progress caches and the pre-date-cut backup of the master file.
+backend/data/final_filtered_data/.ai_label_cache.json
+backend/data/final_filtered_data/.ai_label_cache_pass1_backup.json
+backend/data/final_filtered_data/master_filtered_reviews_ai_labelled_before_date_cut.csv

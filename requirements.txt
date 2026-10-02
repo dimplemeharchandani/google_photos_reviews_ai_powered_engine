@@ -1,0 +1,6 @@
+streamlit==1.64.0
+chromadb==1.5.9
+sentence-transformers==6.1.0
+google-genai==2.24.0
+pandas==3.0.6
+google-play-scraper==1.2.7
