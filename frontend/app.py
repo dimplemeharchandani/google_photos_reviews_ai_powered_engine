@@ -95,9 +95,12 @@ st.markdown(
       [data-testid="stSidebar"] {
         background: #ffffff !important;
         border-right: 1px solid #eceff1;
+        box-sizing: border-box !important;
         width: 312px !important;
         min-width: 312px !important;
         max-width: 312px !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
         /* Streamlit slides a collapsed sidebar off-screen. Keep it in place. */
         transform: none !important;
       }
@@ -172,7 +175,7 @@ st.markdown(
       .refs-body {
         max-height: min(62vh, 520px);
         overflow: auto;
-        padding: 0 14px 14px;
+        padding: 14px;
         border-top: 1px solid #eee;
       }
       [data-testid="stAppViewContainer"] > .main { overflow: auto; }
@@ -184,7 +187,13 @@ st.markdown(
         overflow: visible !important;
       }
       [data-testid="stSidebar"] { z-index: 100; }
-      [data-testid="stSidebarContent"] { padding-top: 11px !important; }
+      [data-testid="stSidebarContent"] {
+        padding: 11px 16px 0 !important;
+      }
+      [data-testid="stSidebarUserContent"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
 
       [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
       [data-testid="stSidebar"] [data-testid="stElementContainer"],
@@ -198,7 +207,7 @@ st.markdown(
         height: auto !important;
       }
       [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-kicker) {
-        margin: 16px 0 8px !important;
+        margin: 28px 0 8px !important;
         padding: 0 !important;
       }
       [data-testid="stSidebar"] button {
@@ -363,6 +372,99 @@ st.markdown(
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      /* Same dark tip as New chat and Repository. Fixed so the recents
+         scroller does not clip it or let it cover the next row. */
+      [class*="st-key-chat-"] {
+        position: relative;
+        overflow: visible !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        flex: 0 0 40px !important;
+      }
+      [class*="st-key-chat-"]::after,
+      [class*="st-key-chat-"]::before {
+        display: none;
+        pointer-events: none;
+      }
+      [class*="st-key-chat-"]::after {
+        position: fixed;
+        left: 320px;
+        top: var(--tip-y, -9999px);
+        transform: translateY(-50%);
+        z-index: 80;
+        width: max-content;
+        max-width: 260px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: #1f1f1f;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.35;
+        white-space: normal;
+        box-shadow: 0 6px 18px rgba(32, 33, 36, .18);
+      }
+      [class*="st-key-chat-"]::before {
+        content: "";
+        position: fixed;
+        left: 314px;
+        top: var(--tip-y, -9999px);
+        transform: translateY(-50%);
+        z-index: 81;
+        border: 6px solid transparent;
+        border-right-color: #1f1f1f;
+      }
+      [class*="st-key-chat-"]:hover::after,
+      [class*="st-key-chat-"]:hover::before { display: block; }
+      [data-testid="stSidebarUserContent"],
+      [data-testid="stSidebarUserContent"] > div,
+      [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {
+        height: 100% !important;
+        max-height: 100vh !important;
+        min-height: 0 !important;
+      }
+      [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      /* Streamlit wraps the chat list in stLayoutWrapper, not the button
+         itself. That wrapper was growing with every chat, so nothing scrolled. */
+      [data-testid="stSidebar"] [data-testid="stLayoutWrapper"]:has(.st-key-recents) {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .st-key-recents {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      .st-key-recents [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      .st-key-recents [data-testid="stElementContainer"] {
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        flex: 0 0 40px !important;
+        overflow: visible !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(iframe) {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        flex: 0 0 0 !important;
+      }
       .st-key-prompts {
         position: fixed !important;
         left: calc(312px + 1.4rem) !important;
@@ -473,6 +575,61 @@ st.markdown(
         font-size: 14px;
         line-height: 1.4;
         color: var(--muted);
+      }
+      .side-note {
+        display: block;
+        margin: 12px;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #80868b;
+      }
+      /* Pinned to the bottom of the sidebar, the way the question box is pinned
+         under the conversation. Chats scroll behind it. */
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-note) {
+        position: fixed !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 312px !important;
+        margin: 0 !important;
+        padding: 12px 16px 12px !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+        border-right: 1px solid #eceff1;
+        z-index: 40 !important;
+        flex: none !important;
+      }
+      .st-key-recents {
+        padding-bottom: 78px !important;
+        box-sizing: border-box !important;
+      }
+      /* The sidebar markdown wrapper collapses to 0 height, so the label
+         was painting on top of the first chat. Give these their own height. */
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-kicker),
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-empty),
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-note),
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-kicker),
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-empty),
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-note),
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-kicker) > div,
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-empty) > div,
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-note) > div {
+        height: auto !important;
+        max-height: none !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-kicker) {
+        min-height: 20px !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-empty) {
+        min-height: 22px !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-note) {
+        min-height: 40px !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-kicker) > div,
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-empty) > div,
+      [data-testid="stSidebar"] [data-testid="stMarkdown"]:has(.side-note) > div {
+        display: block !important;
       }
       .tip {
         display: none;
@@ -629,6 +786,9 @@ st.markdown(
       .st-key-chatscroll [data-testid="stMarkdownContainer"] {
         margin: 0 !important;
         padding: 0 !important;
+      }
+      .st-key-chatscroll [data-testid="stElementContainer"]:has(.row-right) {
+        margin-bottom: 8px !important;
       }
       .st-key-chatscroll,
       .st-key-chatscroll [data-testid="stVerticalBlockBorderWrapper"] {
@@ -1232,6 +1392,47 @@ def blank_chat():
     return {"id": uuid.uuid4().hex, "turns": [], "pending": None}
 
 
+def css_string(text):
+    """A single line safe to drop into a CSS content value."""
+    cleaned = " ".join((text or "").split())
+    if len(cleaned) > 220:
+        cleaned = cleaned[:217].rstrip() + "…"
+    return (
+        cleaned.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("<", "")
+    )
+
+
+def place_chat_tips():
+    """Line each chat tip up with its row, even while the list scrolls."""
+    components.html(
+        """
+        <script>
+        const doc = window.parent.document;
+        const place = (row) => {
+          const box = row.getBoundingClientRect();
+          row.style.setProperty("--tip-y", (box.top + box.height / 2) + "px");
+        };
+        if (!doc.documentElement.dataset.chatTips) {
+          doc.documentElement.dataset.chatTips = "1";
+          doc.addEventListener("mouseover", (event) => {
+            const row = event.target.closest("[class*='st-key-chat-']");
+            if (row) place(row);
+          });
+          doc.addEventListener("scroll", (event) => {
+            const scroller = event.target;
+            if (!scroller || !scroller.querySelector) return;
+            const row = scroller.querySelector("[class*='st-key-chat-']:hover");
+            if (row) place(row);
+          }, true);
+        }
+        </script>
+        """,
+        height=0,
+    )
+
+
 def chat_title(chat):
     """The sidebar label: the first question in that thread."""
     for turn in chat["turns"]:
@@ -1341,15 +1542,15 @@ with st.sidebar:
         chat for chat in reversed(st.session_state.chats)
         if chat["turns"] or chat["pending"]
     ]
-    if not saved_chats:
-        st.markdown(
-            "<div class='side-kicker'>Recents</div>"
-            "<div class='side-empty'>Chats you start show up here.</div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown("<div class='side-kicker'>Recents</div>", unsafe_allow_html=True)
-        open_id = st.session_state.active_chat_id
+    st.markdown("<div class='side-kicker'>Recents</div>", unsafe_allow_html=True)
+    tip_rules = []
+    open_id = st.session_state.active_chat_id
+    with st.container(border=False, key="recents"):
+        if not saved_chats:
+            st.markdown(
+                "<div class='side-empty'>Chats you start show up here.</div>",
+                unsafe_allow_html=True,
+            )
         for chat in saved_chats:
             title = chat_title(chat)
             full = next(
@@ -1360,14 +1561,24 @@ with st.sidebar:
                 ),
                 chat.get("pending") or title,
             )
+            tip_rules.append(
+                f'.st-key-chat-{chat["id"]}::after{{content:"{css_string(full)}"}}'
+            )
             if st.button(
                 title,
                 key=f"chat-{chat['id']}",
-                help=full,
                 type="primary" if chat["id"] == open_id else "secondary",
                 use_container_width=True,
             ):
                 open_saved_chat(chat["id"])
+    if tip_rules:
+        st.markdown("<style>" + " ".join(tip_rules) + "</style>", unsafe_allow_html=True)
+        place_chat_tips()
+    st.markdown(
+        "<div class='side-note'>Note - Chats are limited to this browser session. "
+        "Refreshing the page clears them.</div>",
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
