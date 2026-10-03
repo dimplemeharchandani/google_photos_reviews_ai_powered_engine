@@ -597,7 +597,8 @@ st.markdown(
         font-weight: 400;
         animation: caret-blink 1s steps(1) infinite;
       }
-      .st-key-chatscroll [data-testid="stElementContainer"]:has(iframe) {
+      .st-key-chatscroll [data-testid="stElementContainer"]:has(iframe),
+      [data-testid="stMain"] [data-testid="stElementContainer"]:has(iframe) {
         height: 0 !important;
         min-height: 0 !important;
         margin: 0 !important;
@@ -761,6 +762,11 @@ st.markdown(
         margin: .45rem 0;
         background: #fff;
       }
+      @keyframes src-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .src-card-in { animation: src-in .24s ease; }
       .src-top { display: flex; justify-content: space-between; gap: .4rem; align-items: flex-start; }
       .src-head { font-weight: 600; color: var(--ink); font-size: .8rem; line-height: 1.35; }
       .score {
@@ -946,6 +952,8 @@ def small_talk_reply(text):
 # long, so the pause is trimmed to land on that rate.
 REVEAL_CHARS_PER_SEC = 112
 REVEAL_SLICE = 3
+# How long each new reference card stays alone before the next one arrives.
+REF_TILE_PAUSE = 0.28
 
 
 def reveal_answer(text):
@@ -1039,6 +1047,11 @@ def source_color(name):
     return "#34A853"
 
 
+def reference_key(source):
+    """Identity of a cited review, so the same link is not shown twice."""
+    return source.get("url") or source_line(source)
+
+
 def chat_references(turns):
     """Unique reviews cited in this conversation, newest answer first."""
     seen = set()
@@ -1047,7 +1060,7 @@ def chat_references(turns):
         if not turn.get("used"):
             continue
         for source in turn.get("sources") or []:
-            key = source.get("url") or source_line(source)
+            key = reference_key(source)
             if key in seen:
                 continue
             seen.add(key)
@@ -1055,10 +1068,11 @@ def chat_references(turns):
     return ordered
 
 
-def show_reference(index, source):
+def show_reference(index, source, arriving=False):
     color = source_color(source.get("source", ""))
+    klass = "src-card src-card-in" if arriving else "src-card"
     return (
-        f"<div class='src-card' style='--accent:{color}'>"
+        f"<div class='{klass}' style='--accent:{color}'>"
         f"<div class='src-top'>"
         f"<div class='src-head'>{index}. {html.escape(source_line(source))}</div>"
         f"<span class='score'>{source['similarity']:.3f}</span>"
@@ -1067,6 +1081,104 @@ def show_reference(index, source):
         f"{html.escape(source['url'])}</a>"
         f"</div>"
     )
+
+
+def references_markup(turns, sources=None, arriving_key=None):
+    """The references card. Pass sources to show a growing subset, one new tile at a time."""
+    cited = chat_references(turns) if sources is None else sources
+    latest = turns[-1] if turns else {}
+    if cited:
+        period = (
+            f"<div class='muted'><b>Limited to {html.escape(latest['period'])}</b></div>"
+            if latest.get("period") else ""
+        )
+        cards = "".join(
+            show_reference(
+                i,
+                source,
+                arriving=arriving_key is not None and reference_key(source) == arriving_key,
+            )
+            for i, source in enumerate(cited, start=1)
+        )
+        body = (
+            f"<div class='muted'>Used in this chat — {len(cited)} "
+            f"{'review' if len(cited) == 1 else 'reviews'}.</div>"
+            + period
+            + cards
+        )
+        open_attr = "open"
+    elif turns and latest.get("smalltalk"):
+        body = (
+            "<div class='muted'>No references for that message. It was a greeting, "
+            "so no reviews were searched.</div>"
+        )
+        open_attr = ""
+    elif turns and not latest.get("used"):
+        body = (
+            "<div class='muted'>No references. Nothing in the library was close enough "
+            "to answer from.</div>"
+        )
+        open_attr = ""
+    else:
+        body = (
+            "<div class='muted'>Reviews used in this chat will show up here, "
+            "with a similarity score and a link back to the original.</div>"
+        )
+        open_attr = ""
+    return (
+        f"<details class='refs-card' {open_attr}>"
+        "<summary class='refs-heading'>"
+        "<span>References</span>"
+        "<span class='refs-chevron'></span>"
+        "</summary>"
+        f"<div class='refs-body'>{body}</div>"
+        "</details>"
+    )
+
+
+def reveal_new_references(slot, turns, previous_keys):
+    """Add each new reference card on its own, then leave the rest in place."""
+    final = chat_references(turns)
+    fresh = [source for source in final if reference_key(source) not in previous_keys]
+    if not fresh:
+        slot.markdown(references_markup(turns), unsafe_allow_html=True)
+        return
+    # The card list is replaced on every tile, so watch the page for the one
+    # that is arriving and keep it inside the references panel.
+    components.html(
+        """
+        <script>
+        const doc = window.parent.document;
+        if (doc.body.dataset.refWatch === "1") return;
+        doc.body.dataset.refWatch = "1";
+        const watch = () => {
+          const card = doc.querySelector(".src-card-in");
+          if (card) card.scrollIntoView({block: "nearest", inline: "nearest"});
+        };
+        new MutationObserver(watch).observe(doc.body, {
+          childList: true, subtree: true
+        });
+        watch();
+        setTimeout(watch, 80);
+        setTimeout(watch, 240);
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+    revealed = set()
+    for source in fresh:
+        key = reference_key(source)
+        revealed.add(key)
+        shown = [
+            item for item in final
+            if reference_key(item) in previous_keys or reference_key(item) in revealed
+        ]
+        slot.markdown(
+            references_markup(turns, sources=shown, arriving_key=key),
+            unsafe_allow_html=True,
+        )
+        time.sleep(REF_TILE_PAUSE)
 
 
 def open_chat(question=None):
@@ -1173,6 +1285,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 main, refs = st.columns([2.7, 1], gap="large")
 pending_slot = None
+refs_slot = None
 view = st.session_state.view
 
 with main:
@@ -1369,43 +1482,9 @@ with main:
             st.rerun()
 
 with refs:
-    cited = chat_references(st.session_state.turns)
-    if cited:
-        latest = st.session_state.turns[-1] if st.session_state.turns else {}
-        period = (
-            f"<div class='muted'><b>Limited to {html.escape(latest['period'])}</b></div>"
-            if latest.get("period") else ""
-        )
-        body = (
-            f"<div class='muted'>Used in this chat — {len(cited)} "
-            f"{'review' if len(cited) == 1 else 'reviews'}.</div>"
-            + period
-            + "".join(show_reference(i, source) for i, source in enumerate(cited, start=1))
-        )
-    elif st.session_state.turns and st.session_state.turns[-1].get("smalltalk"):
-        body = (
-            "<div class='muted'>No references for that message. It was a greeting, "
-            "so no reviews were searched.</div>"
-        )
-    elif st.session_state.turns and not st.session_state.turns[-1].get("used"):
-        body = (
-            "<div class='muted'>No references. Nothing in the library was close enough "
-            "to answer from.</div>"
-        )
-    else:
-        body = (
-            "<div class='muted'>Reviews used in this chat will show up here, "
-            "with a similarity score and a link back to the original.</div>"
-        )
-    open_attr = "open" if cited else ""
-    st.markdown(
-        f"<details class='refs-card' {open_attr}>"
-        "<summary class='refs-heading'>"
-        "<span>References</span>"
-        "<span class='refs-chevron'></span>"
-        "</summary>"
-        f"<div class='refs-body'>{body}</div>"
-        "</details>",
+    refs_slot = st.empty()
+    refs_slot.markdown(
+        references_markup(st.session_state.turns),
         unsafe_allow_html=True,
     )
 
@@ -1415,10 +1494,14 @@ with refs:
 # ---------------------------------------------------------------------------
 # The question is already on screen, with a live status in pending_slot.
 # Finding the answer happens below. When it is ready, that same spot types
-# the reply out instead of swapping in the finished paragraph.
+# the reply out, and each new reference card follows on its own.
 question = st.session_state.pending
 
 if question and backend_ready:
+    already_cited = {
+        reference_key(source)
+        for source in chat_references(st.session_state.turns)
+    }
     try:
         chat_reply = small_talk_reply(question)
         if chat_reply:
@@ -1460,4 +1543,6 @@ if question and backend_ready:
         with pending_slot:
             st.write_stream(reveal_answer(turn["answer"]))
         st.session_state.scroll_chat = True
+    if refs_slot is not None:
+        reveal_new_references(refs_slot, st.session_state.turns, already_cited)
     st.rerun()
