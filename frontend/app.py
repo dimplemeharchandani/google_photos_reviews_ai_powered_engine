@@ -126,7 +126,8 @@ st.markdown(
         padding-right: var(--refs-rail);
         max-width: 100%;
       }
-      [data-testid="stColumn"]:has(.refs-card) {
+      [data-testid="stColumn"]:has(.refs-card),
+      [data-testid="stColumn"]:has(.refs-anchor) {
         width: 0 !important;
         min-width: 0 !important;
         max-width: 0 !important;
@@ -970,8 +971,10 @@ st.markdown(
       }
       .src-url:hover { text-decoration: underline; }
 
-      [data-testid="stMain"] .block-container:has(.flow) { padding-right: 2rem; }
-      [data-testid="stAppViewContainer"]:has(.flow) .refs-card { display: none !important; }
+      [data-testid="stMain"] .block-container:has(.flow),
+      [data-testid="stMain"] .block-container:has(.st-key-library) { padding-right: 2rem; }
+      [data-testid="stAppViewContainer"]:has(.flow) .refs-card,
+      [data-testid="stAppViewContainer"]:has(.st-key-library) .refs-card { display: none !important; }
 
       .flow { max-width: 820px; margin: .6rem auto 2rem; }
       .stage {
@@ -1131,26 +1134,68 @@ st.markdown(
         .or { padding: 4px 0; text-align: center; }
       }
 
+      .st-key-library { max-width: 820px; }
+      .st-key-library [data-testid="stTextInputRootElement"],
+      .st-key-library .react-aria-ComboBox > div {
+        background: #fff !important;
+        border: 1.5px solid #80868b !important;
+        border-radius: 12px !important;
+        min-height: 44px;
+      }
+      .st-key-library [data-testid="stTextInput"] input {
+        border: none !important;
+        background: transparent !important;
+        font-size: 15px !important;
+        min-height: 42px;
+      }
+      .lib-count {
+        color: var(--muted);
+        font-size: .84rem;
+        margin: .35rem 0 .85rem;
+      }
+      .lib-empty {
+        color: var(--muted);
+        font-size: .95rem;
+        padding: 1.2rem 0 1.6rem;
+      }
       .review-card {
         background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: .75rem .85rem;
-        margin-bottom: .55rem;
+        border: 1.5px solid #80868b;
+        border-radius: 16px;
+        padding: 16px 18px 14px;
+        margin-bottom: 14px;
       }
-      .review-meta { font-size: .78rem; color: var(--muted); margin-bottom: .3rem; }
-      .review-text { color: var(--ink); font-size: .92rem; line-height: 1.45; }
-      .review-card .src-url { display: block; margin-top: .45rem; }
+      .review-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .review-source {
+        font-size: .84rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .review-when { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+      .review-text { color: var(--ink); font-size: .95rem; line-height: 1.5; }
+      .review-tags { margin-top: 10px; }
+      .review-card .src-url { display: inline-block; margin-top: 10px; }
       .tag {
         display: inline-block;
-        margin-top: .4rem;
-        margin-right: .3rem;
-        background: var(--blue-soft);
-        color: #174ea6;
+        margin: 0 .35rem .3rem 0;
+        background: #f1f3f4;
+        color: #3c4043;
         border-radius: 999px;
-        padding: .05rem .45rem;
+        padding: .14rem .5rem;
         font-size: .72rem;
-        font-weight: 600;
+        font-weight: 500;
+      }
+      .lib-page {
+        color: var(--muted);
+        font-size: .84rem;
+        text-align: center;
+        padding-top: .55rem;
       }
 
       [data-testid="stMain"] div[data-testid="stButton"] > button {
@@ -1760,94 +1805,110 @@ view = st.session_state.view
 
 with main:
     if view == "library":
-        st.markdown("<div class='page-title'>Reviews library</div>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='page-lead'>The reviews this engine can search. "
-            "Play Store, Reddit, YouTube, and the Google Photos community forum.</div>",
-            unsafe_allow_html=True,
-        )
-        frame = load_library()
-        sources = ["All sources"] + sorted(frame["source"].astype(str).unique())
-        pick, query_col = st.columns([1, 2])
-        with pick:
-            chosen = st.selectbox("Source", sources, label_visibility="collapsed")
-        with query_col:
-            query = st.text_input(
-                "Search reviews",
-                placeholder="Search the library",
-                label_visibility="collapsed",
-            )
-        filtered = frame
-        if chosen != "All sources":
-            filtered = filtered[filtered["source"].astype(str) == chosen]
-        if query.strip():
-            needle = query.strip().lower()
-            filtered = filtered[filtered["text"].astype(str).str.lower().str.contains(needle, regex=False)]
-
-        signature = (chosen, query.strip())
-        if st.session_state.get("library_sig") != signature:
-            st.session_state.library_sig = signature
-            st.session_state.library_page = 0
-        total = len(filtered)
-        pages = max(1, (total + LIBRARY_PAGE_SIZE - 1) // LIBRARY_PAGE_SIZE)
-        st.session_state.library_page = min(st.session_state.library_page, pages - 1)
-        start = st.session_state.library_page * LIBRARY_PAGE_SIZE
-        page = filtered.iloc[start:start + LIBRARY_PAGE_SIZE]
-
-        st.markdown(
-            f"<div class='muted'>{total} reviews</div>",
-            unsafe_allow_html=True,
-        )
-        for _, row in page.iterrows():
-            text = str(row["text"]).strip()
-            if len(text) > 320:
-                text = text[:317].rstrip() + "…"
-            bits = [str(row["source"])]
-            date = str(row["date"]).strip()
-            if date:
-                bits.append(date[:10])
-            rating = str(row["rating"]).strip()
-            if rating and rating.lower() not in ("nan", "none"):
-                if rating.endswith(".0"):
-                    rating = rating[:-2]
-                bits.append(f"{rating}★")
-            tags = []
-            for label, column in (
-                ("Failure", "failure_type"),
-                ("Memory", "memory_detail"),
-                ("Photo age", "photo_age"),
-            ):
-                value = str(row.get(column, "")).strip()
-                if value and value.lower() not in ("not specified", "not mentioned", "nan"):
-                    tags.append(f"{label}: {value}")
-            tag_html = "".join(f"<span class='tag'>{html.escape(tag)}</span>" for tag in tags)
-            url = str(row["url"]).strip()
-            link = (
-                f"<a class='src-url' href='{html.escape(url)}' target='_blank'>Open original</a>"
-                if url else ""
-            )
+        with st.container(key="library"):
+            st.markdown("<div class='page-title'>Reviews library</div>", unsafe_allow_html=True)
             st.markdown(
-                f"<div class='review-card'>"
-                f"<div class='review-meta'>{html.escape(' · '.join(bits))}</div>"
-                f"<div class='review-text'>{html.escape(text)}</div>"
-                f"{tag_html}{link}</div>",
+                "<div class='page-lead'>The reviews this engine can search. "
+                "Play Store, Reddit, YouTube, and the Google Photos community forum.</div>",
                 unsafe_allow_html=True,
             )
-        prev_col, page_col, next_col = st.columns([1, 2, 1])
-        with prev_col:
-            if st.button("Previous", disabled=st.session_state.library_page <= 0, key="lib-prev"):
-                st.session_state.library_page -= 1
-                st.rerun()
-        with page_col:
+            frame = load_library()
+            sources = ["All sources"] + sorted(frame["source"].astype(str).unique())
+            pick, query_col = st.columns([1, 2])
+            with pick:
+                chosen = st.selectbox("Source", sources, label_visibility="collapsed")
+            with query_col:
+                query = st.text_input(
+                    "Search reviews",
+                    placeholder="Search the library",
+                    label_visibility="collapsed",
+                )
+            filtered = frame
+            if chosen != "All sources":
+                filtered = filtered[filtered["source"].astype(str) == chosen]
+            if query.strip():
+                needle = query.strip().lower()
+                filtered = filtered[filtered["text"].astype(str).str.lower().str.contains(needle, regex=False)]
+
+            signature = (chosen, query.strip())
+            if st.session_state.get("library_sig") != signature:
+                st.session_state.library_sig = signature
+                st.session_state.library_page = 0
+            total = len(filtered)
+            pages = max(1, (total + LIBRARY_PAGE_SIZE - 1) // LIBRARY_PAGE_SIZE)
+            st.session_state.library_page = min(st.session_state.library_page, pages - 1)
+            start = st.session_state.library_page * LIBRARY_PAGE_SIZE
+            page = filtered.iloc[start:start + LIBRARY_PAGE_SIZE]
+
             st.markdown(
-                f"<div class='muted' style='text-align:center;padding-top:.45rem'>"
-                f"Page {st.session_state.library_page + 1} of {pages}</div>",
+                f"<div class='lib-count'>{total} reviews</div>",
                 unsafe_allow_html=True,
             )
-        with next_col:
-            if st.button("Next", disabled=st.session_state.library_page >= pages - 1, key="lib-next"):
-                st.session_state.library_page += 1
-                st.rerun()
+            if total == 0:
+                st.markdown(
+                    "<div class='lib-empty'>Nothing in the library matches that.</div>",
+                    unsafe_allow_html=True,
+                )
+            for _, row in page.iterrows():
+                text = str(row["text"]).strip()
+                if len(text) > 320:
+                    text = text[:317].rstrip() + "…"
+                when = []
+                date = str(row["date"]).strip()
+                if date:
+                    when.append(date[:10])
+                rating = str(row["rating"]).strip()
+                if rating and rating.lower() not in ("nan", "none"):
+                    if rating.endswith(".0"):
+                        rating = rating[:-2]
+                    when.append(f"{rating}★")
+                when_html = (
+                    f"<span class='review-when'>{html.escape(' · '.join(when))}</span>"
+                    if when else ""
+                )
+                tags = []
+                for label, column in (
+                    ("Failure", "failure_type"),
+                    ("Memory", "memory_detail"),
+                    ("Photo age", "photo_age"),
+                ):
+                    value = str(row.get(column, "")).strip()
+                    if value and value.lower() not in ("not specified", "not mentioned", "nan"):
+                        tags.append(f"{label}: {value}")
+                tag_html = (
+                    "<div class='review-tags'>"
+                    + "".join(f"<span class='tag'>{html.escape(tag)}</span>" for tag in tags)
+                    + "</div>"
+                    if tags else ""
+                )
+                url = str(row["url"]).strip()
+                link = (
+                    f"<a class='src-url' href='{html.escape(url)}' target='_blank'>Open original</a>"
+                    if url else ""
+                )
+                st.markdown(
+                    f"<div class='review-card'>"
+                    f"<div class='review-top'>"
+                    f"<span class='review-source'>{html.escape(str(row['source']))}</span>"
+                    f"{when_html}</div>"
+                    f"<div class='review-text'>{html.escape(text)}</div>"
+                    f"{tag_html}{link}</div>",
+                    unsafe_allow_html=True,
+                )
+            prev_col, page_col, next_col = st.columns([1, 2, 1])
+            with prev_col:
+                if st.button("Previous", disabled=st.session_state.library_page <= 0, key="lib-prev"):
+                    st.session_state.library_page -= 1
+                    st.rerun()
+            with page_col:
+                st.markdown(
+                    f"<div class='lib-page'>Page {st.session_state.library_page + 1} of {pages}</div>",
+                    unsafe_allow_html=True,
+                )
+            with next_col:
+                if st.button("Next", disabled=st.session_state.library_page >= pages - 1, key="lib-next"):
+                    st.session_state.library_page += 1
+                    st.rerun()
 
     elif view == "workflow":
         st.markdown("<div class='page-title'>How it works</div>", unsafe_allow_html=True)
@@ -1998,10 +2059,14 @@ with main:
 
 with refs:
     refs_slot = st.empty()
-    refs_slot.markdown(
-        references_markup(active_chat()["turns"]),
-        unsafe_allow_html=True,
-    )
+    if view == "chat":
+        refs_slot.markdown(
+            references_markup(active_chat()["turns"]),
+            unsafe_allow_html=True,
+        )
+    else:
+        # The column stays collapsed. The card itself is only for chat.
+        refs_slot.markdown("<div class='refs-anchor'></div>", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
