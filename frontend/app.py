@@ -970,26 +970,166 @@ st.markdown(
       }
       .src-url:hover { text-decoration: underline; }
 
-      .flow { max-width: 640px; margin-top: .4rem; }
-      .flow-sources, .flow-split { display: flex; flex-wrap: wrap; gap: .45rem; }
-      .pill {
+      [data-testid="stMain"] .block-container:has(.flow) { padding-right: 2rem; }
+      [data-testid="stAppViewContainer"]:has(.flow) .refs-card { display: none !important; }
+
+      .flow { max-width: 820px; margin: .6rem auto 2rem; }
+      .stage {
         background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        padding: .35rem .75rem;
-        font-size: .86rem;
-        color: var(--ink);
-      }
-      .step {
-        background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: .75rem .9rem;
+        border: 1.5px solid #80868b;
+        border-radius: 16px;
+        padding: 20px 22px 22px;
         box-shadow: 0 1px 2px rgba(32, 33, 36, .04);
       }
-      .step strong { display: block; margin-bottom: .15rem; color: var(--ink); }
-      .step span { color: var(--muted); font-size: .9rem; line-height: 1.4; }
-      .arrow { color: #9aa0a6; padding: .28rem 0 .28rem .9rem; font-size: .9rem; }
+      .stage-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .num {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 26px;
+        margin-top: 1px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        line-height: 1;
+      }
+      .n-blue { background: #4285F4; }
+      .n-red { background: #EA4335; }
+      .n-yellow { background: #FBBC04; color: #202124; }
+      .n-green { background: #34A853; }
+      .stage-title {
+        font-size: calc(1.02rem + 1px);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        line-height: 1.25;
+      }
+      .stage-sub {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: .86rem;
+        line-height: 1.4;
+      }
+      .row {
+        display: flex;
+        align-items: stretch;
+        gap: 14px;
+      }
+      .block {
+        flex: 1 1 0;
+        min-width: 0;
+        background: #fff;
+        border: 1.5px solid #80868b;
+        border-top: 3px solid var(--c, #4285F4);
+        border-radius: 12px;
+        padding: 16px 14px 15px;
+        text-align: center;
+      }
+      .block b {
+        display: block;
+        font-size: .86rem;
+        font-weight: 600;
+        color: #202124;
+        line-height: 1.35;
+      }
+      .block span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: .78rem;
+        line-height: 1.4;
+      }
+      .c-blue { --c: #4285F4; }
+      .c-red { --c: #EA4335; }
+      .c-yellow { --c: #FBBC04; }
+      .c-green { --c: #34A853; }
+      .harr {
+        flex: 0 0 40px;
+        align-self: center;
+        height: 2px;
+        margin: 0;
+        background: #5f6368;
+        position: relative;
+      }
+      .harr::after {
+        content: "";
+        position: absolute;
+        right: -1px;
+        top: 50%;
+        width: 8px;
+        height: 8px;
+        border-top: 2px solid #5f6368;
+        border-right: 2px solid #5f6368;
+        transform: translateY(-50%) rotate(45deg);
+      }
+      .varr {
+        display: flex;
+        justify-content: center;
+        height: 56px;
+      }
+      .varr span {
+        width: 2px;
+        height: 34px;
+        margin-top: 8px;
+        background: #5f6368;
+        position: relative;
+      }
+      .varr span::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid #5f6368;
+        border-bottom: 2px solid #5f6368;
+        transform: translate(-50%, 3px) rotate(45deg);
+      }
+      .then {
+        margin: 22px 0 14px;
+        text-align: center;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: #5f6368;
+      }
+      .or {
+        flex: 0 0 auto;
+        align-self: center;
+        padding: 0 16px;
+        font-size: .82rem;
+        color: #5f6368;
+      }
+      @media (max-width: 860px) {
+        .row { flex-direction: column; align-items: stretch; gap: 14px; }
+        .harr {
+          width: 2px;
+          height: 28px;
+          flex: 0 0 28px;
+          margin: 0 auto;
+          background: #5f6368;
+        }
+        .harr::after {
+          right: auto;
+          left: 50%;
+          top: auto;
+          bottom: 0;
+          border-top: none;
+          border-right: 2px solid #5f6368;
+          border-bottom: 2px solid #5f6368;
+          transform: translate(-50%, 3px) rotate(45deg);
+        }
+        .or { padding: 4px 0; text-align: center; }
+      }
 
       .review-card {
         background: #fff;
@@ -1364,7 +1504,7 @@ def reveal_new_references(slot, turns, previous_keys):
 
 def open_chat(question=None):
     """Switch back to the open conversation. Optionally queue a question."""
-    st.session_state.view = "chat"
+    go_to("chat")
     if question:
         active_chat()["pending"] = question
     st.rerun()
@@ -1446,8 +1586,37 @@ def chat_title(chat):
     return question if len(question) <= 32 else question[:31] + "…"
 
 
+# Each section has its own address, so a refresh stays where you were.
+# Changing section updates that address without loading the app again.
+VIEW_SLUGS = {
+    "chat": "chat",
+    "library": "library",
+    "workflow": "how-it-works",
+}
+SLUG_VIEWS = {slug: view for view, slug in VIEW_SLUGS.items()}
+
+
+def go_to(view):
+    """Show a section and keep that choice in the address bar."""
+    st.session_state.view = view
+    slug = VIEW_SLUGS[view]
+    if st.query_params.get("view") != slug:
+        st.query_params["view"] = slug
+
+
+def view_in_url():
+    """The section named in the address bar, if it is one we know."""
+    return SLUG_VIEWS.get(st.query_params.get("view", ""))
+
+
 if "view" not in st.session_state:
-    st.session_state.view = "chat"
+    st.session_state.view = view_in_url() or "chat"
+# The address bar wins on refresh and when the back button is used.
+# A click below replaces it in this same run, then the script starts again.
+if view_in_url():
+    st.session_state.view = view_in_url()
+else:
+    go_to(st.session_state.view)
 if "library_page" not in st.session_state:
     st.session_state.library_page = 0
 if "chats" not in st.session_state:
@@ -1474,7 +1643,7 @@ def active_chat():
 def start_new_chat():
     """Open a blank thread. An already blank thread is left as it is."""
     current = active_chat()
-    st.session_state.view = "chat"
+    go_to("chat")
     if not current["turns"] and not current["pending"]:
         return
     chat = blank_chat()
@@ -1485,7 +1654,7 @@ def start_new_chat():
 def open_saved_chat(chat_id):
     """Show a thread already in this session. Does not ask again."""
     st.session_state.active_chat_id = chat_id
-    st.session_state.view = "chat"
+    go_to("chat")
     st.session_state.scroll_chat = True
     st.rerun()
 
@@ -1510,7 +1679,7 @@ except Exception as e:  # noqa: BLE001 - show the user what went wrong
 view = st.session_state.view
 with st.sidebar:
     if st.button("Photos Review Engine", key="brand", use_container_width=True):
-        st.session_state.view = "chat"
+        go_to("chat")
         st.rerun()
     if st.button("New chat", key="nav-new", use_container_width=True):
         start_new_chat()
@@ -1521,7 +1690,7 @@ with st.sidebar:
         type="primary" if view == "library" else "secondary",
         use_container_width=True,
     ):
-        st.session_state.view = "library"
+        go_to("library")
         st.rerun()
     if st.button(
         "How it works",
@@ -1529,7 +1698,7 @@ with st.sidebar:
         type="primary" if view == "workflow" else "secondary",
         use_container_width=True,
     ):
-        st.session_state.view = "workflow"
+        go_to("workflow")
         st.rerun()
     st.markdown(
         f"<a class='nav-item' href='{GITHUB_URL}' target='_blank' rel='noopener'>"
@@ -1683,39 +1852,83 @@ with main:
     elif view == "workflow":
         st.markdown("<div class='page-title'>How it works</div>", unsafe_allow_html=True)
         st.markdown(
-            "<div class='page-lead'>A question is answered only from real Google Photos "
-            "reviews. If nothing in the library is close enough, the engine says so "
-            "instead of guessing.</div>",
+            "<div class='page-lead'>Real reviews become an answer. "
+            "If nothing in the library is close enough, we say so.</div>",
             unsafe_allow_html=True,
         )
         st.markdown(
             """
             <div class="flow">
-              <div class="flow-sources">
-                <span class="pill">Play Store reviews</span>
-                <span class="pill">Reddit posts</span>
-                <span class="pill">YouTube comments</span>
-                <span class="pill">Community forum</span>
+              <div class="stage">
+                <div class="stage-top">
+                  <span class="num n-blue">1</span>
+                  <div>
+                    <div class="stage-title">Gather the stories</div>
+                    <div class="stage-sub">We collect what people already wrote about Google Photos.</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="block c-blue"><b>Play Store</b><span>Photos reviews</span></div>
+                  <div class="block c-red"><b>Reddit</b><span>Posts</span></div>
+                  <div class="block c-yellow"><b>YouTube</b><span>Comments</span></div>
+                  <div class="block c-green"><b>Forum</b><span>Help posts</span></div>
+                </div>
               </div>
-              <div class="arrow">↓</div>
-              <div class="step"><strong>1 · Filter and label</strong>
-                <span>Keep feedback about failing to find a photo or video. Label the failure, what the person remembers, and how old the photo is.</span></div>
-              <div class="arrow">↓</div>
-              <div class="step"><strong>2 · Split into chunks</strong>
-                <span>Long posts are cut into overlapping pieces so a sentence in the middle can still be found. Each piece keeps its link.</span></div>
-              <div class="arrow">↓</div>
-              <div class="step"><strong>3 · Embed into a local database</strong>
-                <span>Each chunk is turned into numbers with all-MiniLM-L6-v2 and stored in Chroma. Similar meanings land near each other, even when the words differ.</span></div>
-              <div class="arrow">↓</div>
-              <div class="flow-split">
-                <div class="step" style="flex:1"><strong>4 · Your question</strong>
-                  <span>The question is embedded the same way, then the closest reviews are retrieved.</span></div>
-                <div class="step" style="flex:1"><strong>5 · Gemini</strong>
-                  <span>The model may use only those reviews. It does not invent quotes.</span></div>
+              <div class="varr"><span></span></div>
+              <div class="stage">
+                <div class="stage-top">
+                  <span class="num n-red">2</span>
+                  <div>
+                    <div class="stage-title">Keep what matters</div>
+                    <div class="stage-sub">Only stories about failing to find a photo or video stay in.</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="block c-blue"><b>Search problems</b><span>The rest is left out</span></div>
+                  <div class="harr"></div>
+                  <div class="block c-red"><b>One shared list</b><span>Same details for every source</span></div>
+                  <div class="harr"></div>
+                  <div class="block c-yellow"><b>Plain tags</b><span>What failed, what they remember, how old the photo is</span></div>
+                </div>
               </div>
-              <div class="arrow">↓</div>
-              <div class="step"><strong>6 · Answer and references</strong>
-                <span>The reply stays in the conversation. The reviews it used appear in the references card, with a similarity score and a link.</span></div>
+              <div class="varr"><span></span></div>
+              <div class="stage">
+                <div class="stage-top">
+                  <span class="num n-yellow">3</span>
+                  <div>
+                    <div class="stage-title">Search by meaning</div>
+                    <div class="stage-sub">Called RAG. A question can find a story even when the words are different.</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="block c-blue"><b>Short pieces</b><span>A long post is cut up, so one sentence can still be found</span></div>
+                  <div class="harr"></div>
+                  <div class="block c-red"><b>Match the idea</b><span>“Old photo” sits near “picture from years ago”</span></div>
+                  <div class="harr"></div>
+                  <div class="block c-green"><b>Keep the link</b><span>Every piece still points back to the original</span></div>
+                </div>
+              </div>
+              <div class="varr"><span></span></div>
+              <div class="stage">
+                <div class="stage-top">
+                  <span class="num n-green">4</span>
+                  <div>
+                    <div class="stage-title">Answer your question</div>
+                    <div class="stage-sub">The reply uses only the stories that were found. Nothing is invented.</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="block c-blue"><b>You ask</b><span>Anything about finding photos</span></div>
+                  <div class="harr"></div>
+                  <div class="block c-yellow"><b>Closest stories</b><span>The ones that mean the same thing</span></div>
+                </div>
+                <div class="then">Then one of two things</div>
+                <div class="row">
+                  <div class="block c-green"><b>Close enough</b><span>A short answer, written only from those stories, with links</span></div>
+                  <div class="or">or</div>
+                  <div class="block c-red"><b>Not close enough</b><span>We say we don’t know, instead of guessing</span></div>
+                </div>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1780,7 +1993,7 @@ with main:
             )
         if sent and asked and asked.strip() and backend_ready:
             active_chat()["pending"] = asked.strip()
-            st.session_state.view = "chat"
+            go_to("chat")
             st.rerun()
 
 with refs:
