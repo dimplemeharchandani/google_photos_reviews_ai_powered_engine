@@ -191,6 +191,14 @@ st.markdown(
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+        /* Don't let a short sidebar squash these rows on top of each other. */
+        flex: 0 0 auto !important;
+        min-height: unset !important;
+        height: auto !important;
+      }
+      [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.side-kicker) {
+        margin: 16px 0 8px !important;
+        padding: 0 !important;
       }
       [data-testid="stSidebar"] button {
         width: 100% !important;
@@ -447,7 +455,7 @@ st.markdown(
       .recent-text { font-weight: 400; color: #3c4043; }
       .side-kicker {
         display: block;
-        margin: 16px 10px 0;
+        margin: 0 10px;
         padding: 0;
         font-size: 13px;
         font-weight: 600;
@@ -527,7 +535,7 @@ st.markdown(
       }
       .page-lead { color: var(--muted); font-size: .95rem; margin-bottom: .9rem; line-height: 1.45; }
 
-      .row-right { display: flex; justify-content: flex-end; margin: .55rem 0; }
+      .row-right { display: flex; justify-content: flex-end; margin: 0; }
       .bubble-user {
         background: var(--pill);
         color: var(--ink);
@@ -540,8 +548,8 @@ st.markdown(
       [data-testid="stChatMessage"] {
         background: transparent;
         border: none;
-        padding: .15rem 0;
-        margin: .15rem 0;
+        padding: 0;
+        margin: 0;
         width: 100%;
         max-width: 100%;
       }
@@ -613,6 +621,13 @@ st.markdown(
         transform: none !important;
       }
       [data-testid="stElementContainer"]:has(.chat-dock) { display: none !important; }
+      .st-key-chatscroll { gap: 4px !important; }
+      .st-key-chatscroll [data-testid="stElementContainer"],
+      .st-key-chatscroll [data-testid="stMarkdown"],
+      .st-key-chatscroll [data-testid="stMarkdownContainer"] {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
       .st-key-chatscroll,
       .st-key-chatscroll [data-testid="stVerticalBlockBorderWrapper"] {
         width: min(760px, calc(100vw - 312px - var(--refs-rail) - 1.4rem - 8px)) !important;
@@ -705,6 +720,10 @@ st.markdown(
         background: transparent !important;
         box-shadow: none !important;
         font-size: 17px !important;
+      }
+      [data-testid="stForm"] [data-testid="InputInstructions"],
+      [data-testid="stForm"] :has(> [data-testid="InputInstructions"]) {
+        display: none !important;
       }
       [data-testid="stForm"] [data-testid="stFormSubmitButton"] {
         width: 42px !important;
