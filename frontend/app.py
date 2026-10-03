@@ -20,8 +20,10 @@ import html
 import importlib.util
 import os
 import re
+import time
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 # This file lives in frontend/, so the project folder is one level up - that
 # is where backend/ sits alongside it.
@@ -546,6 +548,63 @@ st.markdown(
       [data-testid="stChatMessageAvatarAssistant"],
       [data-testid="stChatMessageAvatarUser"] { display: none !important; }
 
+      .thinking {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 1.6rem;
+        padding: .15rem 0 .1rem;
+      }
+      .thinking-label {
+        font-size: .95rem;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        background: linear-gradient(90deg, #9aa0a6 0%, #3c4043 45%, #9aa0a6 90%);
+        background-size: 220% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: thinking-shimmer 1.5s linear infinite;
+      }
+      .thinking-dots { display: inline-flex; gap: 4px; align-items: center; }
+      .thinking-dots span {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #1a73e8;
+        animation: thinking-bounce 1.05s infinite ease-in-out;
+      }
+      .thinking-dots span:nth-child(2) { animation-delay: .15s; }
+      .thinking-dots span:nth-child(3) { animation-delay: .3s; }
+      @keyframes thinking-shimmer {
+        0% { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
+      }
+      @keyframes thinking-bounce {
+        0%, 70%, 100% { opacity: .3; transform: translateY(0); }
+        35% { opacity: 1; transform: translateY(-3px); }
+      }
+      @keyframes caret-blink {
+        0%, 45% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
+      [data-testid="stChatMessage"]:has(.typing-now):not(:has(.thinking))
+        [data-testid="stMarkdownContainer"]:last-of-type > *:last-child::after {
+        content: "▍";
+        display: inline-block;
+        margin-left: 1px;
+        color: #1a73e8;
+        font-weight: 400;
+        animation: caret-blink 1s steps(1) infinite;
+      }
+      .st-key-chatscroll [data-testid="stElementContainer"]:has(iframe) {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+
       .stApp,
       [data-testid="stAppViewContainer"],
       [data-testid="stMain"],
@@ -881,6 +940,80 @@ def small_talk_reply(text):
     return None
 
 
+# How fast a finished answer is revealed. 112 characters a second is 40%
+# faster than the first pass. Three-character slices keep the pace even,
+# so a long word does not pop in after a pause. time.sleep runs slightly
+# long, so the pause is trimmed to land on that rate.
+REVEAL_CHARS_PER_SEC = 112
+REVEAL_SLICE = 3
+
+
+def reveal_answer(text):
+    """Yield the answer in small even slices so it reads as continuous typing."""
+    text = text or ""
+    if not text:
+        yield ""
+        return
+    delay = max(0.0, REVEAL_SLICE / REVEAL_CHARS_PER_SEC - 0.004)
+    for start in range(0, len(text), REVEAL_SLICE):
+        yield text[start:start + REVEAL_SLICE]
+        if start + REVEAL_SLICE < len(text):
+            time.sleep(delay)
+
+
+def thinking_status(question):
+    """The live status shown while a reply is being prepared.
+
+    Greetings never search the library, so they must not say that they do.
+    """
+    label = "Writing a reply" if small_talk_reply(question) else "Searching reviews"
+    return (
+        "<div class='thinking' role='status' aria-live='polite'>"
+        f"<span class='thinking-label'>{html.escape(label)}</span>"
+        "<span class='thinking-dots' aria-hidden='true'>"
+        "<span></span><span></span><span></span>"
+        "</span></div>"
+    )
+
+
+def follow_latest_message():
+    """Keep the conversation pinned to the newest line while text is arriving."""
+    token = str(time.time())
+    components.html(
+        f"""
+        <script>
+        const token = {token!r};
+        const doc = window.parent.document;
+        const box = doc.querySelector(
+          '.st-key-chatscroll [data-testid="stVerticalBlockBorderWrapper"]'
+        ) || doc.querySelector('.st-key-chatscroll');
+        if (!box) return;
+        const jump = () => {{ box.scrollTop = box.scrollHeight; }};
+        jump();
+        if (box.dataset.followToken !== token) {{
+          box.dataset.followToken = token;
+          const pause = () => {{
+            const gap = box.scrollHeight - box.scrollTop - box.clientHeight;
+            box.dataset.pauseFollow = gap > 160 ? "1" : "0";
+          }};
+          box.addEventListener("wheel", pause, {{passive: true}});
+          box.addEventListener("touchmove", pause, {{passive: true}});
+          new MutationObserver(() => {{
+            if (box.dataset.pauseFollow === "1") return;
+            jump();
+          }}).observe(box, {{
+            childList: true, subtree: true, characterData: true
+          }});
+        }}
+        setTimeout(jump, 60);
+        setTimeout(jump, 240);
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
+
 def source_line(source):
     """One line describing where a piece of evidence came from."""
     bits = [source["source"]]
@@ -1039,7 +1172,7 @@ with st.sidebar:
 # Centre and references
 # ---------------------------------------------------------------------------
 main, refs = st.columns([2.7, 1], gap="large")
-typed = None
+pending_slot = None
 view = st.session_state.view
 
 with main:
@@ -1199,7 +1332,19 @@ with main:
                         unsafe_allow_html=True,
                     )
                     with st.chat_message("assistant"):
-                        st.markdown("_Searching reviews…_")
+                        st.markdown(
+                            "<div class='typing-now'></div>",
+                            unsafe_allow_html=True,
+                        )
+                        pending_slot = st.empty()
+                        with pending_slot:
+                            st.markdown(
+                                thinking_status(st.session_state.pending),
+                                unsafe_allow_html=True,
+                            )
+            if st.session_state.pending or st.session_state.get("scroll_chat"):
+                follow_latest_message()
+                st.session_state.scroll_chat = False
 
         if not st.session_state.turns and not st.session_state.pending and backend_ready:
             with st.container(key="prompts"):
@@ -1212,9 +1357,12 @@ with main:
                 "Ask",
                 placeholder="Ask about Google Photos reviews" if backend_ready else "Backend not available",
                 label_visibility="collapsed",
-                disabled=not backend_ready,
+                disabled=not backend_ready or bool(st.session_state.pending),
             )
-            sent = st.form_submit_button("Send")
+            sent = st.form_submit_button(
+                "Send",
+                disabled=not backend_ready or bool(st.session_state.pending),
+            )
         if sent and asked and asked.strip() and backend_ready:
             st.session_state.pending = asked.strip()
             st.session_state.view = "chat"
@@ -1265,38 +1413,28 @@ with refs:
 # ---------------------------------------------------------------------------
 # Handle a new question
 # ---------------------------------------------------------------------------
-# Step 1 of asking: remember the question and redraw straight away, so it
-# appears in the conversation with "Searching reviews..." underneath. Nothing
-# is worked out yet.
-if typed and backend_ready:
-    st.session_state.pending = typed
-    st.session_state.view = "chat"
-    st.rerun()
-
-# Step 2: the question has now been drawn on screen (above), so it is safe to
-# take our time working out the answer.
+# The question is already on screen, with a live status in pending_slot.
+# Finding the answer happens below. When it is ready, that same spot types
+# the reply out instead of swapping in the finished paragraph.
 question = st.session_state.pending
 
 if question and backend_ready:
-    chat_reply = small_talk_reply(question)
-
-    if chat_reply:
-        st.session_state.turns.append(
-            {
+    try:
+        chat_reply = small_talk_reply(question)
+        if chat_reply:
+            turn = {
                 "question": question,
                 "answer": chat_reply,
                 "sources": [],
                 "used": False,
                 "smalltalk": True,
             }
-        )
-    else:
-        result = step3.ask_question(
-            question, collection, embed_model, gemini_model,
-            quiet=True, return_details=True,
-        )
-        st.session_state.turns.append(
-            {
+        else:
+            result = step3.ask_question(
+                question, collection, embed_model, gemini_model,
+                quiet=True, return_details=True,
+            )
+            turn = {
                 "question": question,
                 "answer": result["answer"],
                 "sources": result["sources"],
@@ -1304,7 +1442,22 @@ if question and backend_ready:
                 "smalltalk": False,
                 "period": result.get("period"),
             }
-        )
+    except Exception as error:  # noqa: BLE001 - keep the chat usable
+        turn = {
+            "question": question,
+            "answer": (
+                "I couldn't finish that search. "
+                f"{type(error).__name__}: {error}"
+            ),
+            "sources": [],
+            "used": False,
+            "smalltalk": False,
+        }
 
+    st.session_state.turns.append(turn)
     st.session_state.pending = None
+    if pending_slot is not None:
+        with pending_slot:
+            st.write_stream(reveal_answer(turn["answer"]))
+        st.session_state.scroll_chat = True
     st.rerun()
