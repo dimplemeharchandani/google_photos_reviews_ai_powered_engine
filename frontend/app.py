@@ -20,8 +20,6 @@ import html
 import importlib.util
 import os
 import re
-from urllib.parse import quote
-
 import pandas as pd
 import streamlit as st
 
@@ -82,6 +80,7 @@ st.markdown(
         --blue: #1a73e8;
         --blue-soft: #e8f0fe;
         --pill: #f0f4f9;
+        --refs-rail: 372px;
       }
 
       header[data-testid="stHeader"], #MainMenu, footer { display: none; }
@@ -118,8 +117,60 @@ st.markdown(
         padding-top: 1.1rem;
         padding-bottom: .6rem;
         padding-left: 1.4rem;
-        padding-right: 1.1rem;
+        padding-right: var(--refs-rail);
         max-width: 100%;
+      }
+      [data-testid="stColumn"]:has(.refs-card) {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        flex: 0 0 0px !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+      .refs-card {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: 340px;
+        background: #fff;
+        border: 1px solid #e6e8ee;
+        border-radius: 14px;
+        box-shadow: 0 1px 2px rgba(32, 33, 36, .04), 0 10px 28px rgba(32, 33, 36, .08);
+        z-index: 80;
+        overflow: hidden;
+      }
+      .refs-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0;
+        padding: 14px 16px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: #1f1f1f;
+        cursor: pointer;
+        list-style: none;
+      }
+      .refs-heading::-webkit-details-marker { display: none; }
+      .refs-chevron {
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid #1f1f1f;
+        border-bottom: 2px solid #1f1f1f;
+        transform: rotate(-45deg);
+        margin-right: 2px;
+      }
+      .refs-card[open] .refs-chevron {
+        transform: rotate(45deg);
+        margin-top: -4px;
+      }
+      .refs-body {
+        max-height: min(62vh, 520px);
+        overflow: auto;
+        padding: 0 14px 14px;
+        border-top: 1px solid #eee;
       }
       [data-testid="stAppViewContainer"] > .main { overflow: auto; }
 
@@ -131,6 +182,213 @@ st.markdown(
       }
       [data-testid="stSidebar"] { z-index: 100; }
       [data-testid="stSidebarContent"] { padding-top: 11px !important; }
+
+      [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
+      [data-testid="stSidebar"] [data-testid="stElementContainer"],
+      [data-testid="stSidebar"] [data-testid="stButton"] {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      [data-testid="stSidebar"] button {
+        width: 100% !important;
+        min-height: 40px !important;
+        height: 40px !important;
+        margin: 0 !important;
+        padding: 0 10px !important;
+        gap: 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        outline: none !important;
+        color: #3c4043 !important;
+        font-size: 17px !important;
+        font-weight: 500 !important;
+        text-align: left !important;
+        line-height: 1.2 !important;
+      }
+      [data-testid="stSidebar"] button > div,
+      [data-testid="stSidebar"] button p {
+        margin: 0 !important;
+        width: auto !important;
+        flex: 0 1 auto !important;
+        justify-content: flex-start !important;
+        background: transparent !important;
+        font-size: 17px !important;
+        font-weight: 500 !important;
+        line-height: 1.2 !important;
+        text-align: left !important;
+        color: #3c4043 !important;
+      }
+      [data-testid="stSidebar"] button > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+      }
+      [data-testid="stSidebar"] button:hover {
+        background: #f1f3f4 !important;
+        background-color: #f1f3f4 !important;
+        border: none !important;
+        color: #3c4043 !important;
+      }
+      [data-testid="stSidebar"] .st-key-nav-library button[kind="primary"],
+      [data-testid="stSidebar"] .st-key-nav-flow button[kind="primary"] {
+        background: #e8eaed !important;
+        background-color: #e8eaed !important;
+      }
+      .st-key-brand button {
+        min-height: 56px !important;
+        height: 56px !important;
+        margin-bottom: 8px !important;
+      }
+      .st-key-brand button p {
+        font-size: 22px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.03em;
+        color: #1f1f1f !important;
+      }
+      .st-key-brand button::before,
+      .st-key-nav-new button::before,
+      .st-key-nav-library button::before,
+      .st-key-nav-flow button::before {
+        content: "";
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        background: center / 22px 22px no-repeat;
+      }
+      .st-key-brand button::before {
+        width: 29px;
+        height: 29px;
+        flex-basis: 29px;
+        background-size: 29px 29px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath fill='%2334A853' d='M58.2 192C58.2 156.7 86.9 128 122.2 128H128v122.2c0 3.2-2.6 5.8-5.8 5.8C86.9 256 58.2 227.3 58.2 192z'/%3E%3Cpath fill='%23FBBC04' d='M64 58.2C99.3 58.2 128 86.9 128 122.2V128H5.8C2.6 128 0 125.4 0 122.2 0 86.9 28.7 58.2 64 58.2z'/%3E%3Cpath fill='%23EA4335' d='M197.8 64c0 35.3-28.7 64-64 64H128V5.8C128 2.6 130.6 0 133.8 0 169.1 0 197.8 28.7 197.8 64z'/%3E%3Cpath fill='%234285F4' d='M192 197.8c-35.3 0-64-28.7-64-64V128h122.2c3.2 0 5.8 2.6 5.8 5.8 0 35.3-28.7 64-64 64z'/%3E%3C/svg%3E");
+      }
+      .st-key-nav-new button::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233c4043' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E");
+      }
+      .st-key-nav-library button::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233c4043' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E");
+      }
+      .st-key-nav-flow button::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233c4043' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='2' width='6' height='5' rx='1'/%3E%3Crect x='3' y='17' width='6' height='5' rx='1'/%3E%3Crect x='15' y='17' width='6' height='5' rx='1'/%3E%3Cpath d='M12 7v3M12 10H8a2 2 0 0 0-2 2v5M12 10h4a2 2 0 0 1 2 2v5'/%3E%3C/svg%3E");
+      }
+      .st-key-brand,
+      .st-key-nav-new,
+      .st-key-nav-library,
+      .st-key-nav-flow {
+        position: relative;
+        overflow: visible !important;
+      }
+      .st-key-brand::after,
+      .st-key-nav-new::after,
+      .st-key-nav-library::after,
+      .st-key-nav-flow::after,
+      .st-key-brand::before,
+      .st-key-nav-new::before,
+      .st-key-nav-library::before,
+      .st-key-nav-flow::before {
+        display: none;
+        pointer-events: none;
+      }
+      .st-key-brand::after,
+      .st-key-nav-new::after,
+      .st-key-nav-library::after,
+      .st-key-nav-flow::after {
+        position: absolute;
+        left: calc(100% + 8px);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        width: max-content;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: #1f1f1f;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.35;
+        white-space: nowrap;
+        box-shadow: 0 6px 18px rgba(32, 33, 36, .18);
+      }
+      .st-key-brand::before,
+      .st-key-nav-new::before,
+      .st-key-nav-library::before,
+      .st-key-nav-flow::before {
+        content: "";
+        position: absolute;
+        left: calc(100% + 2px);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 41;
+        border: 6px solid transparent;
+        border-right-color: #1f1f1f;
+      }
+      .st-key-brand:hover::after,
+      .st-key-nav-new:hover::after,
+      .st-key-nav-library:hover::after,
+      .st-key-nav-flow:hover::after,
+      .st-key-brand:hover::before,
+      .st-key-nav-new:hover::before,
+      .st-key-nav-library:hover::before,
+      .st-key-nav-flow:hover::before { display: block; }
+      .st-key-brand::after { content: "Return to this conversation."; }
+      .st-key-nav-new::after { content: "Start a fresh conversation."; }
+      .st-key-nav-library::after { content: "Browse the reviews this engine searches."; }
+      .st-key-nav-flow::after { content: "See how a question becomes an answer."; }
+
+      [data-testid="stSidebar"] [class*="st-key-hist"] button {
+        min-height: 40px !important;
+      }
+      [data-testid="stSidebar"] [class*="st-key-hist"] button p {
+        font-weight: 400 !important;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .st-key-prompts {
+        position: fixed !important;
+        left: calc(312px + 1.4rem) !important;
+        bottom: 132px !important;
+        width: min(760px, calc(100vw - 312px - var(--refs-rail) - 1.4rem - 8px)) !important;
+        z-index: 50 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .st-key-prompts [data-testid="stVerticalBlock"] { gap: 4px !important; }
+      .st-key-prompts [data-testid="stElementContainer"] { margin: 0 !important; padding: 0 !important; }
+      .st-key-prompts [data-testid="stButton"] { width: fit-content !important; }
+      .st-key-prompts button {
+        width: auto !important;
+        min-height: 0 !important;
+        font-style: italic !important;
+        font-size: 16px !important;
+        font-weight: 400 !important;
+        color: #80868b !important;
+        background: #fff !important;
+        border: 1px solid #e3e6ea !important;
+        border-radius: 999px !important;
+        padding: 8px 16px !important;
+        margin: 0 !important;
+      }
+      .st-key-prompts button:hover {
+        color: #3c4043 !important;
+        border-color: #dadce0 !important;
+        background: #f8f9fa !important;
+      }
+      .st-key-prompts button p {
+        font-style: italic !important;
+        font-size: 16px !important;
+        font-weight: 400 !important;
+      }
 
       .side { padding: 0 .4rem .5rem; }
       .brand-link, .nav-item, .recent-item {
@@ -157,7 +415,7 @@ st.markdown(
         margin-bottom: 9px;
       }
       .brand-link:hover, .nav-item:hover, .recent-item:hover { background: #f1f3f4; }
-      .nav-item.is-on { background: #e8eaed; color: var(--ink) !important; }
+      .nav-item { min-height: 40px; height: 40px; }
       .photos-logo { width: 29px; height: 29px; display: block; flex: 0 0 29px; }
       .brand-name {
         font-size: 22px;
@@ -186,15 +444,20 @@ st.markdown(
       }
       .recent-text { font-weight: 400; color: #3c4043; }
       .side-kicker {
-        margin: 14px 10px 4px;
+        display: block;
+        margin: 16px 10px 0;
+        padding: 0;
         font-size: 13px;
         font-weight: 600;
         letter-spacing: .06em;
         text-transform: uppercase;
+        line-height: 1.2;
         color: #80868b;
       }
       .side-empty {
-        margin: 0 10px;
+        display: block;
+        margin: 8px 10px 0;
+        padding: 0;
         font-size: 14px;
         line-height: 1.4;
         color: var(--muted);
@@ -290,9 +553,14 @@ st.markdown(
         transform: none !important;
       }
       [data-testid="stElementContainer"]:has(.chat-dock) { display: none !important; }
-      [data-testid="stMain"]:has([data-testid="stForm"]) [data-testid="stColumn"]:first-child [data-testid="stVerticalBlockBorderWrapper"]:not(:has([data-testid="stForm"])) {
-        height: calc(100vh - 140px) !important;
+      .st-key-chatscroll,
+      .st-key-chatscroll [data-testid="stVerticalBlockBorderWrapper"] {
+        width: min(760px, calc(100vw - 312px - var(--refs-rail) - 1.4rem - 8px)) !important;
+        height: calc(100vh - 150px) !important;
+        min-height: calc(100vh - 150px) !important;
         max-height: none !important;
+        box-sizing: border-box !important;
+        padding-right: 22px !important;
         overflow: auto !important;
         background: transparent !important;
         border: none !important;
@@ -310,8 +578,8 @@ st.markdown(
         position: fixed;
         left: calc(312px + 1.4rem);
         bottom: 132px;
-        width: calc((100vw - 312px - 2.5rem) * 0.73);
-        max-width: 760px;
+        width: min(760px, calc(100vw - 312px - var(--refs-rail) - 1.4rem - 8px));
+        max-width: none;
         z-index: 50;
         display: flex;
         flex-direction: column;
@@ -348,8 +616,8 @@ st.markdown(
         position: fixed !important;
         bottom: 48px !important;
         left: calc(312px + 1.4rem) !important;
-        width: calc((100vw - 312px - 2.5rem) * 0.73) !important;
-        max-width: 760px !important;
+        width: min(760px, calc(100vw - 312px - var(--refs-rail) - 1.4rem - 8px)) !important;
+        max-width: none !important;
         height: auto !important;
         max-height: 64px !important;
         z-index: 50 !important;
@@ -656,7 +924,7 @@ def chat_references(turns):
 
 def show_reference(index, source):
     color = source_color(source.get("source", ""))
-    st.markdown(
+    return (
         f"<div class='src-card' style='--accent:{color}'>"
         f"<div class='src-top'>"
         f"<div class='src-head'>{index}. {html.escape(source_line(source))}</div>"
@@ -664,8 +932,7 @@ def show_reference(index, source):
         f"</div>"
         f"<a class='src-url' href='{html.escape(source['url'])}' target='_blank'>"
         f"{html.escape(source['url'])}</a>"
-        f"</div>",
-        unsafe_allow_html=True,
+        f"</div>"
     )
 
 
@@ -686,36 +953,10 @@ def _icon(path):
     )
 
 
-ICON_NEW = _icon('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>')
-ICON_LIBRARY = _icon(
-    '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>'
-    '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
-)
-ICON_FLOW = _icon(
-    '<rect x="9" y="2" width="6" height="5" rx="1"/>'
-    '<rect x="3" y="17" width="6" height="5" rx="1"/>'
-    '<rect x="15" y="17" width="6" height="5" rx="1"/>'
-    '<path d="M12 7v3M12 10H8a2 2 0 0 0-2 2v5M12 10h4a2 2 0 0 1 2 2v5"/>'
-)
 ICON_REPO = _icon(
     '<polyline points="16 18 22 12 16 6"/>'
     '<polyline points="8 6 2 12 8 18"/>'
 )
-
-
-def side_link(href, label, tip, icon, active=False, external=False, kind="nav"):
-    """One sidebar row: same icon box, same type size, left aligned, with a hover line."""
-    cls = f"{kind}-item" + (" is-on" if active else "")
-    target = ' target="_blank" rel="noopener"' if external else ' target="_self"'
-    icon_html = f"<span class='nav-ico'>{icon}</span>" if icon else ""
-    text_cls = "recent-text" if kind == "recent" else "nav-text"
-    return (
-        f"<a class='{cls}' href='{href}'{target}>"
-        f"{icon_html}<span class='{text_cls}'>{html.escape(label)}</span>"
-        f"<span class='tip'>{html.escape(tip)}</span></a>"
-    )
-
-
 # ---------------------------------------------------------------------------
 # Session
 # ---------------------------------------------------------------------------
@@ -744,70 +985,54 @@ except Exception as e:  # noqa: BLE001 - show the user what went wrong
 
 
 # ---------------------------------------------------------------------------
-# Sidebar navigation via query params, so every row is the same HTML
+# Sidebar. Buttons stay on this page. Only Repository opens a new tab.
 # ---------------------------------------------------------------------------
-nav_request = st.query_params.get("nav")
-ask_request = st.query_params.get("ask")
-if nav_request == "new":
-    st.session_state.turns = []
-    st.session_state.pending = None
-    st.session_state.view = "chat"
-    st.query_params.clear()
-    st.rerun()
-elif nav_request in ("chat", "library", "workflow"):
-    st.session_state.view = "library" if nav_request == "library" else (
-        "workflow" if nav_request == "workflow" else "chat"
-    )
-    st.query_params.clear()
-    st.rerun()
-elif ask_request:
-    st.session_state.pending = ask_request
-    st.session_state.view = "chat"
-    st.query_params.clear()
-    st.rerun()
-
 view = st.session_state.view
-rows = [
-    side_link("?nav=new", "New chat", "Start a fresh conversation.", ICON_NEW),
-    side_link(
-        "?nav=library", "Reviews library", "Browse the reviews this engine searches.",
-        ICON_LIBRARY, active=view == "library",
-    ),
-    side_link(
-        "?nav=workflow", "How it works", "See how a question becomes an answer.",
-        ICON_FLOW, active=view == "workflow",
-    ),
-    side_link(
-        GITHUB_URL, "Repository", "Open this project on GitHub.",
-        ICON_REPO, external=True,
-    ),
-]
-if st.session_state.turns:
-    recent_html = "".join(
-        side_link(
-            f"?ask={quote(turn['question'])}",
-            turn["question"] if len(turn["question"]) <= 32 else turn["question"][:31] + "…",
-            turn["question"],
-            icon="",
-            kind="recent",
-        )
-        for turn in reversed(st.session_state.turns)
+with st.sidebar:
+    if st.button("Photos Review Engine", key="brand", use_container_width=True):
+        st.session_state.view = "chat"
+        st.rerun()
+    if st.button("New chat", key="nav-new", use_container_width=True):
+        st.session_state.turns = []
+        st.session_state.pending = None
+        st.session_state.view = "chat"
+        st.rerun()
+    if st.button(
+        "Reviews library",
+        key="nav-library",
+        type="primary" if view == "library" else "secondary",
+        use_container_width=True,
+    ):
+        st.session_state.view = "library"
+        st.rerun()
+    if st.button(
+        "How it works",
+        key="nav-flow",
+        type="primary" if view == "workflow" else "secondary",
+        use_container_width=True,
+    ):
+        st.session_state.view = "workflow"
+        st.rerun()
+    st.markdown(
+        f"<a class='nav-item' href='{GITHUB_URL}' target='_blank' rel='noopener'>"
+        f"<span class='nav-ico'>{ICON_REPO}</span>"
+        "<span class='nav-text'>Repository</span>"
+        "<span class='tip'>Open this project on GitHub.</span></a>",
+        unsafe_allow_html=True,
     )
-else:
-    recent_html = "<div class='side-empty'>Questions you ask show up here.</div>"
-
-st.sidebar.markdown(
-    "<div class='side'>"
-    "<a class='brand-link' href='?nav=chat' target='_self'>"
-    f"{PHOTOS_LOGO}"
-    "<span class='brand-name'>Photos Review Engine</span>"
-    "<span class='tip'>Return to this conversation.</span></a>"
-    + "".join(rows)
-    + "<div class='side-kicker'>Recents</div>"
-    + recent_html
-    + "</div>",
-    unsafe_allow_html=True,
-)
+    if not st.session_state.turns:
+        st.markdown(
+            "<div class='side-kicker'>Recents</div>"
+            "<div class='side-empty'>Questions you ask show up here.</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown("<div class='side-kicker'>Recents</div>", unsafe_allow_html=True)
+        for i, turn in enumerate(reversed(st.session_state.turns)):
+            number = len(st.session_state.turns) - 1 - i
+            label = turn["question"] if len(turn["question"]) <= 32 else turn["question"][:31] + "…"
+            if st.button(label, key=f"hist{number}", help=turn["question"], use_container_width=True):
+                open_chat(turn["question"])
 
 
 # ---------------------------------------------------------------------------
@@ -950,7 +1175,7 @@ with main:
         )
 
     else:
-        with st.container(height=PANEL_HEIGHT, border=False):
+        with st.container(height=PANEL_HEIGHT, border=False, key="chatscroll"):
             if not st.session_state.turns and not st.session_state.pending:
                 st.markdown(
                     "<div class='hero'><h1>Ask what people say about finding photos</h1>"
@@ -977,12 +1202,10 @@ with main:
                         st.markdown("_Searching reviews…_")
 
         if not st.session_state.turns and not st.session_state.pending and backend_ready:
-            prompts = "".join(
-                f"<a class='prompt' href='?ask={quote(example)}' target='_self'>"
-                f"{html.escape(example)}</a>"
-                for example in EXAMPLE_QUESTIONS
-            )
-            st.markdown(f"<div class='prompt-stack'>{prompts}</div>", unsafe_allow_html=True)
+            with st.container(key="prompts"):
+                for i, example in enumerate(EXAMPLE_QUESTIONS):
+                    if st.button(example, key=f"prompt{i}"):
+                        open_chat(example)
         st.markdown("<div class='chat-dock'></div>", unsafe_allow_html=True)
         with st.form("composer", clear_on_submit=True, border=False):
             asked = st.text_input(
@@ -998,41 +1221,45 @@ with main:
             st.rerun()
 
 with refs:
-    st.markdown("<div class='refs-card-title'>References</div>", unsafe_allow_html=True)
     cited = chat_references(st.session_state.turns)
-    with st.container(height=PANEL_HEIGHT if cited else 168, border=True):
-        if cited:
-            st.markdown(
-                f"<div class='muted'>Used in this chat — {len(cited)} "
-                f"{'review' if len(cited) == 1 else 'reviews'}.</div>",
-                unsafe_allow_html=True,
-            )
-            latest = st.session_state.turns[-1] if st.session_state.turns else {}
-            if latest.get("period"):
-                st.markdown(
-                    f"<div class='muted'><b>Limited to {html.escape(latest['period'])}</b></div>",
-                    unsafe_allow_html=True,
-                )
-            for i, source in enumerate(cited, start=1):
-                show_reference(i, source)
-        elif st.session_state.turns and st.session_state.turns[-1].get("smalltalk"):
-            st.markdown(
-                "<div class='muted'>No references for that message. It was a greeting, "
-                "so no reviews were searched.</div>",
-                unsafe_allow_html=True,
-            )
-        elif st.session_state.turns and not st.session_state.turns[-1].get("used"):
-            st.markdown(
-                "<div class='muted'>No references. Nothing in the library was close enough "
-                "to answer from.</div>",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                "<div class='muted'>Reviews used in this chat will show up here, "
-                "with a similarity score and a link back to the original.</div>",
-                unsafe_allow_html=True,
-            )
+    if cited:
+        latest = st.session_state.turns[-1] if st.session_state.turns else {}
+        period = (
+            f"<div class='muted'><b>Limited to {html.escape(latest['period'])}</b></div>"
+            if latest.get("period") else ""
+        )
+        body = (
+            f"<div class='muted'>Used in this chat — {len(cited)} "
+            f"{'review' if len(cited) == 1 else 'reviews'}.</div>"
+            + period
+            + "".join(show_reference(i, source) for i, source in enumerate(cited, start=1))
+        )
+    elif st.session_state.turns and st.session_state.turns[-1].get("smalltalk"):
+        body = (
+            "<div class='muted'>No references for that message. It was a greeting, "
+            "so no reviews were searched.</div>"
+        )
+    elif st.session_state.turns and not st.session_state.turns[-1].get("used"):
+        body = (
+            "<div class='muted'>No references. Nothing in the library was close enough "
+            "to answer from.</div>"
+        )
+    else:
+        body = (
+            "<div class='muted'>Reviews used in this chat will show up here, "
+            "with a similarity score and a link back to the original.</div>"
+        )
+    open_attr = "open" if cited else ""
+    st.markdown(
+        f"<details class='refs-card' {open_attr}>"
+        "<summary class='refs-heading'>"
+        "<span>References</span>"
+        "<span class='refs-chevron'></span>"
+        "</summary>"
+        f"<div class='refs-body'>{body}</div>"
+        "</details>",
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
