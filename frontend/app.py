@@ -100,8 +100,19 @@ st.markdown(
         transform: none !important;
       }
 
-      [data-testid="stMain"] {
-        background: radial-gradient(980px 620px at 46% 36%, #d7e9ff 0%, #eef5ff 46%, #f7f9fc 74%);
+      .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        background: #ffffff;
+      }
+      [data-testid="stAppViewContainer"]::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        z-index: 200;
+        pointer-events: none;
+        background: linear-gradient(90deg, #FBBC04, #EA4335, #4285F4, #34A853);
       }
       [data-testid="stMain"] .block-container {
         padding-top: 1.1rem;
@@ -272,27 +283,92 @@ st.markdown(
       [data-testid="stChatMessageAvatarAssistant"],
       [data-testid="stChatMessageAvatarUser"] { display: none !important; }
 
-      [data-testid="stChatInput"] { padding-bottom: .35rem; }
-      [data-testid="stChatInput"] > div {
-        border-radius: 28px !important;
-        border: 1px solid #e3e6ea !important;
-        background: #fff !important;
-        box-shadow: 0 8px 28px rgba(26, 115, 232, .08);
+      .stApp,
+      [data-testid="stAppViewContainer"],
+      [data-testid="stMain"],
+      [data-testid="stMain"] .block-container {
+        transform: none !important;
       }
-
-      [data-testid="stForm"] {
-        max-width: 680px;
-        margin: .4rem auto 0;
+      [data-testid="stElementContainer"]:has(.chat-dock) { display: none !important; }
+      [data-testid="stMain"]:has([data-testid="stForm"]) [data-testid="stColumn"]:first-child [data-testid="stVerticalBlockBorderWrapper"]:not(:has([data-testid="stForm"])) {
+        height: calc(100vh - 140px) !important;
+        max-height: none !important;
+        overflow: auto !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stForm"]) {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      .prompt-stack {
+        position: fixed;
+        left: calc(312px + 1.4rem);
+        bottom: 132px;
+        width: calc((100vw - 312px - 2.5rem) * 0.73);
+        max-width: 760px;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-left: 0;
+        box-sizing: border-box;
+      }
+      .prompt, .prompt:visited {
+        display: inline-block;
+        font-style: italic;
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.35;
+        color: #80868b !important;
+        text-decoration: none !important;
         background: #fff;
         border: 1px solid #e3e6ea;
         border-radius: 999px;
-        box-shadow: 0 8px 28px rgba(26, 115, 232, .1);
-        padding: .2rem .35rem .2rem .85rem;
+        padding: 8px 16px;
+      }
+      .prompt:hover {
+        color: #3c4043 !important;
+        border-color: #dadce0;
+        background: #f8f9fa;
+      }
+      [data-testid="stElementContainer"]:has(.prompt-stack) {
+        height: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+
+      [data-testid="stForm"] {
+        position: fixed !important;
+        bottom: 48px !important;
+        left: calc(312px + 1.4rem) !important;
+        width: calc((100vw - 312px - 2.5rem) * 0.73) !important;
+        max-width: 760px !important;
+        height: auto !important;
+        max-height: 64px !important;
+        z-index: 50 !important;
+        margin: 0 !important;
+        background: #fff;
+        border: 1px solid #e3e6ea;
+        border-radius: 999px;
+        box-shadow: 0 1px 2px rgba(32, 33, 36, .06), 0 8px 20px rgba(32, 33, 36, .10);
+        padding: .25rem .35rem .25rem .9rem;
       }
       [data-testid="stForm"] [data-testid="stVerticalBlock"] {
         flex-direction: row !important;
         align-items: center !important;
+        height: auto !important;
+        min-height: 0 !important;
         gap: .35rem;
+      }
+      [data-testid="stForm"] [data-testid="stElementContainer"] {
+        margin-bottom: 0 !important;
       }
       [data-testid="stForm"] [data-testid="stElementContainer"]:first-child { flex: 1 1 auto; }
       [data-testid="stForm"] [data-testid="stTextInput"] div,
@@ -300,14 +376,47 @@ st.markdown(
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
+        font-size: 17px !important;
+      }
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] {
+        width: 42px !important;
+        height: 42px !important;
+        flex: 0 0 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       [data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
-        border-radius: 999px !important;
-        background: var(--blue) !important;
-        color: #fff !important;
+        position: relative;
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        min-height: 42px !important;
+        padding: 0 !important;
+        margin: 0 !important;
         border: none !important;
-        padding: .4rem .9rem !important;
-        min-height: 0 !important;
+        border-radius: 50% !important;
+        box-shadow: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background:
+          radial-gradient(circle at center, #fff 0 15px, transparent 16px),
+          conic-gradient(#FBBC04 0 90deg, #EA4335 90deg 180deg, #4285F4 180deg 270deg, #34A853 270deg 360deg) !important;
+      }
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] [data-testid="stIconMaterial"] {
+        display: none !important;
+      }
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 20px;
+        height: 20px;
+        transform: translate(-50%, -50%);
+        background: center / 19px 19px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' stroke='%23000' stroke-width='1.35' stroke-linejoin='round' stroke-linecap='round' d='M13 19V7.83l4.88 4.88c.39.39 1.03.39 1.42 0a.996.996 0 000-1.41l-6.59-6.59a.996.996 0 00-1.41 0l-6.6 6.58a.996.996 0 101.41 1.41L11 7.83V19c0 .55.45 1 1 1s1-.45 1-1z'/%3E%3C/svg%3E");
       }
 
       .refs-card-title {
@@ -841,32 +950,15 @@ with main:
         )
 
     else:
-        if not st.session_state.turns and not st.session_state.pending:
-            st.markdown(
-                "<div class='hero'><h1>Ask what people say about finding photos</h1>"
-                "<p>Answers come only from Play Store reviews, Reddit, YouTube, "
-                "and the Google Photos forum. References sit on the right.</p></div>",
-                unsafe_allow_html=True,
-            )
-            chips = st.columns(3, gap="small")
-            for i, example in enumerate(EXAMPLE_QUESTIONS):
-                with chips[i]:
-                    if st.button(example, key=f"eg{i}", use_container_width=True, disabled=not backend_ready):
-                        open_chat(example)
-            with st.form("composer", clear_on_submit=True, border=False):
-                asked = st.text_input(
-                    "Ask",
-                    placeholder="Ask about Google Photos reviews",
-                    label_visibility="collapsed",
-                    disabled=not backend_ready,
+        with st.container(height=PANEL_HEIGHT, border=False):
+            if not st.session_state.turns and not st.session_state.pending:
+                st.markdown(
+                    "<div class='hero'><h1>Ask what people say about finding photos</h1>"
+                    "<p>Answers come only from Play Store reviews, Reddit, YouTube, "
+                    "and the Google Photos forum. References sit on the right.</p></div>",
+                    unsafe_allow_html=True,
                 )
-                sent = st.form_submit_button("Send")
-            if sent and asked and asked.strip() and backend_ready:
-                st.session_state.pending = asked.strip()
-                st.session_state.view = "chat"
-                st.rerun()
-        else:
-            with st.container(height=PANEL_HEIGHT, border=False):
+            else:
                 for turn in st.session_state.turns:
                     st.markdown(
                         f"<div class='row-right'><div class='bubble-user'>"
@@ -883,10 +975,27 @@ with main:
                     )
                     with st.chat_message("assistant"):
                         st.markdown("_Searching reviews…_")
-            typed = st.chat_input(
-                "Ask about Google Photos reviews" if backend_ready else "Backend not available",
+
+        if not st.session_state.turns and not st.session_state.pending and backend_ready:
+            prompts = "".join(
+                f"<a class='prompt' href='?ask={quote(example)}' target='_self'>"
+                f"{html.escape(example)}</a>"
+                for example in EXAMPLE_QUESTIONS
+            )
+            st.markdown(f"<div class='prompt-stack'>{prompts}</div>", unsafe_allow_html=True)
+        st.markdown("<div class='chat-dock'></div>", unsafe_allow_html=True)
+        with st.form("composer", clear_on_submit=True, border=False):
+            asked = st.text_input(
+                "Ask",
+                placeholder="Ask about Google Photos reviews" if backend_ready else "Backend not available",
+                label_visibility="collapsed",
                 disabled=not backend_ready,
             )
+            sent = st.form_submit_button("Send")
+        if sent and asked and asked.strip() and backend_ready:
+            st.session_state.pending = asked.strip()
+            st.session_state.view = "chat"
+            st.rerun()
 
 with refs:
     st.markdown("<div class='refs-card-title'>References</div>", unsafe_allow_html=True)
