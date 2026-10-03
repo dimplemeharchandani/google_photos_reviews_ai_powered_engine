@@ -20,6 +20,7 @@ import html
 import importlib.util
 import os
 import re
+from urllib.parse import quote
 
 import pandas as pd
 import streamlit as st
@@ -84,17 +85,20 @@ st.markdown(
       }
 
       header[data-testid="stHeader"], #MainMenu, footer { display: none; }
+      [data-testid="stSidebarHeader"],
       [data-testid="stSidebarCollapseButton"],
-      [data-testid="collapsedControl"] { display: none; }
+      [data-testid="stSidebarCollapsedControl"],
+      [data-testid="collapsedControl"] { display: none !important; }
 
       [data-testid="stSidebar"] {
         background: #ffffff !important;
         border-right: 1px solid #eceff1;
-        min-width: 272px;
-        max-width: 272px;
+        width: 312px !important;
+        min-width: 312px !important;
+        max-width: 312px !important;
+        /* Streamlit slides a collapsed sidebar off-screen. Keep it in place. */
+        transform: none !important;
       }
-      [data-testid="stSidebar"] > div:first-child { padding-top: .85rem; }
-      [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { align-items: center; }
 
       [data-testid="stMain"] {
         background: radial-gradient(980px 620px at 46% 36%, #d7e9ff 0%, #eef5ff 46%, #f7f9fc 74%);
@@ -108,76 +112,116 @@ st.markdown(
       }
       [data-testid="stAppViewContainer"] > .main { overflow: auto; }
 
-      .brand {
+      [data-testid="stSidebar"],
+      [data-testid="stSidebar"] > div,
+      [data-testid="stSidebarContent"],
+      [data-testid="stSidebarUserContent"] {
+        overflow: visible !important;
+      }
+      [data-testid="stSidebar"] { z-index: 100; }
+      [data-testid="stSidebarContent"] { padding-top: 11px !important; }
+
+      .side { padding: 0 .4rem .5rem; }
+      .brand-link, .nav-item, .recent-item {
+        position: relative;
         display: flex;
         align-items: center;
-        gap: .65rem;
-        padding: .15rem .35rem .85rem;
+        justify-content: flex-start;
+        gap: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 47px;
+        padding: 0 10px;
+        border-radius: 10px;
+        color: #3c4043 !important;
+        text-decoration: none !important;
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1;
+        letter-spacing: 0;
       }
-      .photos-logo { width: 28px; height: 28px; display: block; flex: 0 0 auto; }
+      .brand-link {
+        gap: 12px;
+        min-height: 56px;
+        margin-bottom: 9px;
+      }
+      .brand-link:hover, .nav-item:hover, .recent-item:hover { background: #f1f3f4; }
+      .nav-item.is-on { background: #e8eaed; color: var(--ink) !important; }
+      .photos-logo { width: 29px; height: 29px; display: block; flex: 0 0 29px; }
       .brand-name {
-        font-size: .98rem;
+        font-size: 22px;
         font-weight: 600;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
         color: var(--ink);
-        line-height: 1.25;
+        line-height: 1.15;
       }
-
-      .nav-label {
-        margin: 1rem .45rem .3rem;
-        font-size: .72rem;
+      .nav-ico {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #3c4043;
+      }
+      .nav-ico svg { width: 22px; height: 22px; display: block; }
+      .nav-text, .recent-text {
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .recent-text { font-weight: 400; color: #3c4043; }
+      .side-kicker {
+        margin: 14px 10px 4px;
+        font-size: 13px;
         font-weight: 600;
         letter-spacing: .06em;
         text-transform: uppercase;
         color: #80868b;
       }
-
-      [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"],
-      [data-testid="stSidebar"] [data-testid="stBaseButton-primary"] {
-        background: transparent !important;
-        border: none !important;
-        border-radius: 999px !important;
-        color: #3c4043 !important;
-        font-weight: 500 !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        box-shadow: none !important;
-        padding: .45rem .75rem !important;
+      .side-empty {
+        margin: 0 10px;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--muted);
       }
-      [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:hover,
-      [data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
-        background: #f1f3f4 !important;
-        color: var(--ink) !important;
+      .tip {
+        display: none;
+        position: absolute;
+        left: calc(100% + 8px);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        width: max-content;
+        max-width: 280px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: #1f1f1f;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.35;
+        letter-spacing: 0;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 6px 18px rgba(32, 33, 36, .18);
       }
-      [data-testid="stSidebar"] [data-testid="stBaseButton-primary"] {
-        background: #e8eaed !important;
-        color: var(--ink) !important;
+      .tip::before {
+        content: "";
+        position: absolute;
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 6px solid transparent;
+        border-right-color: #1f1f1f;
       }
-      [data-testid="stSidebar"] [class*="st-key-hist"] button {
-        font-weight: 400 !important;
-        color: #3c4043 !important;
-        border-radius: 12px !important;
-      }
-      [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] p,
-      [data-testid="stSidebar"] [data-testid="stBaseButton-primary"] p {
-        white-space: nowrap !important;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .repo-link, .repo-link:visited {
-        display: flex;
-        align-items: center;
-        gap: .55rem;
-        margin: .1rem .15rem;
-        padding: .48rem .8rem;
-        border-radius: 999px;
-        color: #3c4043 !important;
-        text-decoration: none !important;
-        font-weight: 500;
-        font-size: .95rem;
-      }
-      .repo-link:hover { background: #f1f3f4; color: var(--ink) !important; }
+      .brand-link:hover .tip,
+      .nav-item:hover .tip,
+      .recent-item:hover .tip { display: block; }
+      .recent-item .tip { white-space: normal; }
 
       .hero {
         text-align: center;
@@ -196,19 +240,6 @@ st.markdown(
         color: var(--muted);
         font-size: .98rem;
         line-height: 1.45;
-      }
-
-      [data-testid="stSidebar"] .st-key-brand button {
-        background: transparent !important;
-        border-radius: 10px !important;
-        font-size: .98rem !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.02em;
-        padding: .15rem .2rem !important;
-      }
-      [data-testid="stSidebar"] .st-key-brand button p {
-        white-space: normal !important;
-        text-overflow: unset;
       }
 
       .page-title {
@@ -537,6 +568,45 @@ def open_chat(question=None):
     st.rerun()
 
 
+def _icon(path):
+    """A 18px line icon. Every sidebar icon uses this same box."""
+    return (
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'
+        f"{path}</svg>"
+    )
+
+
+ICON_NEW = _icon('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>')
+ICON_LIBRARY = _icon(
+    '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>'
+    '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
+)
+ICON_FLOW = _icon(
+    '<rect x="9" y="2" width="6" height="5" rx="1"/>'
+    '<rect x="3" y="17" width="6" height="5" rx="1"/>'
+    '<rect x="15" y="17" width="6" height="5" rx="1"/>'
+    '<path d="M12 7v3M12 10H8a2 2 0 0 0-2 2v5M12 10h4a2 2 0 0 1 2 2v5"/>'
+)
+ICON_REPO = _icon(
+    '<polyline points="16 18 22 12 16 6"/>'
+    '<polyline points="8 6 2 12 8 18"/>'
+)
+
+
+def side_link(href, label, tip, icon, active=False, external=False, kind="nav"):
+    """One sidebar row: same icon box, same type size, left aligned, with a hover line."""
+    cls = f"{kind}-item" + (" is-on" if active else "")
+    target = ' target="_blank" rel="noopener"' if external else ' target="_self"'
+    icon_html = f"<span class='nav-ico'>{icon}</span>" if icon else ""
+    text_cls = "recent-text" if kind == "recent" else "nav-text"
+    return (
+        f"<a class='{cls}' href='{href}'{target}>"
+        f"{icon_html}<span class='{text_cls}'>{html.escape(label)}</span>"
+        f"<span class='tip'>{html.escape(tip)}</span></a>"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Session
 # ---------------------------------------------------------------------------
@@ -565,70 +635,70 @@ except Exception as e:  # noqa: BLE001 - show the user what went wrong
 
 
 # ---------------------------------------------------------------------------
-# Sidebar
+# Sidebar navigation via query params, so every row is the same HTML
 # ---------------------------------------------------------------------------
-with st.sidebar:
-    mark, name = st.columns([0.22, 0.78], gap="small")
-    with mark:
-        st.markdown(f"<div class='brand' style='padding:0'>{PHOTOS_LOGO}</div>", unsafe_allow_html=True)
-    with name:
-        if st.button("Photos Review Engine", key="brand", use_container_width=True):
-            st.session_state.view = "chat"
-            st.rerun()
-
-    new_chat = st.button(
-        "New chat",
-        key="nav-new",
-        icon=":material/edit_square:",
-        use_container_width=True,
-    )
-    library = st.button(
-        "Reviews library",
-        key="nav-library",
-        icon=":material/library_books:",
-        type="primary" if st.session_state.view == "library" else "secondary",
-        use_container_width=True,
-    )
-    workflow = st.button(
-        "How it works",
-        key="nav-flow",
-        icon=":material/account_tree:",
-        type="primary" if st.session_state.view == "workflow" else "secondary",
-        use_container_width=True,
-    )
-    st.markdown(
-        f"<a class='repo-link' href='{GITHUB_URL}' target='_blank' rel='noopener'>"
-        f"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' "
-        f"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
-        f"<polyline points='16 18 22 12 16 6'/><polyline points='8 6 2 12 8 18'/></svg>"
-        f"Repository</a>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("<div class='nav-label'>Recents</div>", unsafe_allow_html=True)
-    if not st.session_state.turns:
-        st.markdown(
-            "<div class='muted' style='padding:0 .5rem'>Questions you ask show up here.</div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        for i, turn in enumerate(reversed(st.session_state.turns)):
-            number = len(st.session_state.turns) - i
-            label = turn["question"] if len(turn["question"]) <= 42 else turn["question"][:41] + "…"
-            if st.button(label, key=f"hist{number}", use_container_width=True):
-                open_chat(turn["question"])
-
-if new_chat:
+nav_request = st.query_params.get("nav")
+ask_request = st.query_params.get("ask")
+if nav_request == "new":
     st.session_state.turns = []
     st.session_state.pending = None
     st.session_state.view = "chat"
+    st.query_params.clear()
     st.rerun()
-if library:
-    st.session_state.view = "library"
+elif nav_request in ("chat", "library", "workflow"):
+    st.session_state.view = "library" if nav_request == "library" else (
+        "workflow" if nav_request == "workflow" else "chat"
+    )
+    st.query_params.clear()
     st.rerun()
-if workflow:
-    st.session_state.view = "workflow"
+elif ask_request:
+    st.session_state.pending = ask_request
+    st.session_state.view = "chat"
+    st.query_params.clear()
     st.rerun()
+
+view = st.session_state.view
+rows = [
+    side_link("?nav=new", "New chat", "Start a fresh conversation.", ICON_NEW),
+    side_link(
+        "?nav=library", "Reviews library", "Browse the reviews this engine searches.",
+        ICON_LIBRARY, active=view == "library",
+    ),
+    side_link(
+        "?nav=workflow", "How it works", "See how a question becomes an answer.",
+        ICON_FLOW, active=view == "workflow",
+    ),
+    side_link(
+        GITHUB_URL, "Repository", "Open this project on GitHub.",
+        ICON_REPO, external=True,
+    ),
+]
+if st.session_state.turns:
+    recent_html = "".join(
+        side_link(
+            f"?ask={quote(turn['question'])}",
+            turn["question"] if len(turn["question"]) <= 32 else turn["question"][:31] + "…",
+            turn["question"],
+            icon="",
+            kind="recent",
+        )
+        for turn in reversed(st.session_state.turns)
+    )
+else:
+    recent_html = "<div class='side-empty'>Questions you ask show up here.</div>"
+
+st.sidebar.markdown(
+    "<div class='side'>"
+    "<a class='brand-link' href='?nav=chat' target='_self'>"
+    f"{PHOTOS_LOGO}"
+    "<span class='brand-name'>Photos Review Engine</span>"
+    "<span class='tip'>Return to this conversation.</span></a>"
+    + "".join(rows)
+    + "<div class='side-kicker'>Recents</div>"
+    + recent_html
+    + "</div>",
+    unsafe_allow_html=True,
+)
 
 
 # ---------------------------------------------------------------------------
