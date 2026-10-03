@@ -7,7 +7,7 @@ ask_question() function and calls it, so there is exactly one copy of the
 search-and-answer logic and the two can never disagree.
 
 THE LAYOUT:
-    left sidebar - Photos Review Engine, navigation, and recent questions
+    left sidebar - Photos Review Engine, navigation, and recent chats
     centre       - the conversation, the review library, or how the pipeline works
     right        - references used in this chat
 
@@ -21,6 +21,7 @@ import importlib.util
 import os
 import re
 import time
+import uuid
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -247,7 +248,8 @@ st.markdown(
         color: #3c4043 !important;
       }
       [data-testid="stSidebar"] .st-key-nav-library button[kind="primary"],
-      [data-testid="stSidebar"] .st-key-nav-flow button[kind="primary"] {
+      [data-testid="stSidebar"] .st-key-nav-flow button[kind="primary"],
+      [data-testid="stSidebar"] [class*="st-key-chat-"] button[kind="primary"] {
         background: #e8eaed !important;
         background-color: #e8eaed !important;
       }
@@ -352,10 +354,10 @@ st.markdown(
       .st-key-nav-library::after { content: "Browse the reviews this engine searches."; }
       .st-key-nav-flow::after { content: "See how a question becomes an answer."; }
 
-      [data-testid="stSidebar"] [class*="st-key-hist"] button {
+      [data-testid="stSidebar"] [class*="st-key-chat-"] button {
         min-height: 40px !important;
       }
-      [data-testid="stSidebar"] [class*="st-key-hist"] button p {
+      [data-testid="stSidebar"] [class*="st-key-chat-"] button p {
         font-weight: 400 !important;
         white-space: nowrap !important;
         overflow: hidden;
@@ -1201,10 +1203,10 @@ def reveal_new_references(slot, turns, previous_keys):
 
 
 def open_chat(question=None):
-    """Switch back to the conversation. Optionally queue a question."""
+    """Switch back to the open conversation. Optionally queue a question."""
     st.session_state.view = "chat"
     if question:
-        st.session_state.pending = question
+        active_chat()["pending"] = question
     st.rerun()
 
 
@@ -1224,14 +1226,67 @@ ICON_REPO = _icon(
 # ---------------------------------------------------------------------------
 # Session
 # ---------------------------------------------------------------------------
-if "turns" not in st.session_state:
-    st.session_state.turns = []
-if "pending" not in st.session_state:
-    st.session_state.pending = None
+# Chats live in this browser session only. New chat keeps the previous thread
+# in the list and opens a blank one. Nothing is written to disk.
+def blank_chat():
+    return {"id": uuid.uuid4().hex, "turns": [], "pending": None}
+
+
+def chat_title(chat):
+    """The sidebar label: the first question in that thread."""
+    for turn in chat["turns"]:
+        question = (turn.get("question") or "").strip()
+        if question:
+            break
+    else:
+        question = (chat.get("pending") or "").strip()
+    if not question:
+        return "New chat"
+    return question if len(question) <= 32 else question[:31] + "…"
+
+
 if "view" not in st.session_state:
     st.session_state.view = "chat"
 if "library_page" not in st.session_state:
     st.session_state.library_page = 0
+if "chats" not in st.session_state:
+    first = blank_chat()
+    # A session that already had one thread keeps it as the first chat.
+    if st.session_state.get("turns"):
+        first["turns"] = list(st.session_state.turns)
+    if st.session_state.get("pending"):
+        first["pending"] = st.session_state.pending
+    st.session_state.chats = [first]
+    st.session_state.active_chat_id = first["id"]
+
+
+def active_chat():
+    """The thread currently on screen."""
+    for chat in st.session_state.chats:
+        if chat["id"] == st.session_state.active_chat_id:
+            return chat
+    chat = st.session_state.chats[-1]
+    st.session_state.active_chat_id = chat["id"]
+    return chat
+
+
+def start_new_chat():
+    """Open a blank thread. An already blank thread is left as it is."""
+    current = active_chat()
+    st.session_state.view = "chat"
+    if not current["turns"] and not current["pending"]:
+        return
+    chat = blank_chat()
+    st.session_state.chats.append(chat)
+    st.session_state.active_chat_id = chat["id"]
+
+
+def open_saved_chat(chat_id):
+    """Show a thread already in this session. Does not ask again."""
+    st.session_state.active_chat_id = chat_id
+    st.session_state.view = "chat"
+    st.session_state.scroll_chat = True
+    st.rerun()
 
 
 # ---------------------------------------------------------------------------
@@ -1257,9 +1312,7 @@ with st.sidebar:
         st.session_state.view = "chat"
         st.rerun()
     if st.button("New chat", key="nav-new", use_container_width=True):
-        st.session_state.turns = []
-        st.session_state.pending = None
-        st.session_state.view = "chat"
+        start_new_chat()
         st.rerun()
     if st.button(
         "Reviews library",
@@ -1284,19 +1337,37 @@ with st.sidebar:
         "<span class='tip'>Open this project on GitHub.</span></a>",
         unsafe_allow_html=True,
     )
-    if not st.session_state.turns:
+    saved_chats = [
+        chat for chat in reversed(st.session_state.chats)
+        if chat["turns"] or chat["pending"]
+    ]
+    if not saved_chats:
         st.markdown(
             "<div class='side-kicker'>Recents</div>"
-            "<div class='side-empty'>Questions you ask show up here.</div>",
+            "<div class='side-empty'>Chats you start show up here.</div>",
             unsafe_allow_html=True,
         )
     else:
         st.markdown("<div class='side-kicker'>Recents</div>", unsafe_allow_html=True)
-        for i, turn in enumerate(reversed(st.session_state.turns)):
-            number = len(st.session_state.turns) - 1 - i
-            label = turn["question"] if len(turn["question"]) <= 32 else turn["question"][:31] + "…"
-            if st.button(label, key=f"hist{number}", help=turn["question"], use_container_width=True):
-                open_chat(turn["question"])
+        open_id = st.session_state.active_chat_id
+        for chat in saved_chats:
+            title = chat_title(chat)
+            full = next(
+                (
+                    (turn.get("question") or "").strip()
+                    for turn in chat["turns"]
+                    if (turn.get("question") or "").strip()
+                ),
+                chat.get("pending") or title,
+            )
+            if st.button(
+                title,
+                key=f"chat-{chat['id']}",
+                help=full,
+                type="primary" if chat["id"] == open_id else "secondary",
+                use_container_width=True,
+            ):
+                open_saved_chat(chat["id"])
 
 
 # ---------------------------------------------------------------------------
@@ -1440,8 +1511,9 @@ with main:
         )
 
     else:
+        chat = active_chat()
         with st.container(height=PANEL_HEIGHT, border=False, key="chatscroll"):
-            if not st.session_state.turns and not st.session_state.pending:
+            if not chat["turns"] and not chat["pending"]:
                 st.markdown(
                     "<div class='hero'><h1>Ask what people say about finding photos</h1>"
                     "<p>Answers come only from Play Store reviews, Reddit, YouTube, "
@@ -1449,7 +1521,7 @@ with main:
                     unsafe_allow_html=True,
                 )
             else:
-                for turn in st.session_state.turns:
+                for turn in chat["turns"]:
                     st.markdown(
                         f"<div class='row-right'><div class='bubble-user'>"
                         f"{html.escape(turn['question'])}</div></div>",
@@ -1457,10 +1529,10 @@ with main:
                     )
                     with st.chat_message("assistant"):
                         st.write(turn["answer"])
-                if st.session_state.pending:
+                if chat["pending"]:
                     st.markdown(
                         f"<div class='row-right'><div class='bubble-user'>"
-                        f"{html.escape(st.session_state.pending)}</div></div>",
+                        f"{html.escape(chat['pending'])}</div></div>",
                         unsafe_allow_html=True,
                     )
                     with st.chat_message("assistant"):
@@ -1471,14 +1543,14 @@ with main:
                         pending_slot = st.empty()
                         with pending_slot:
                             st.markdown(
-                                thinking_status(st.session_state.pending),
+                                thinking_status(chat["pending"]),
                                 unsafe_allow_html=True,
                             )
-            if st.session_state.pending or st.session_state.get("scroll_chat"):
+            if chat["pending"] or st.session_state.get("scroll_chat"):
                 follow_latest_message()
                 st.session_state.scroll_chat = False
 
-        if not st.session_state.turns and not st.session_state.pending and backend_ready:
+        if not chat["turns"] and not chat["pending"] and backend_ready:
             with st.container(key="prompts"):
                 for i, example in enumerate(EXAMPLE_QUESTIONS):
                     if st.button(example, key=f"prompt{i}"):
@@ -1489,21 +1561,21 @@ with main:
                 "Ask",
                 placeholder="Ask about Google Photos reviews" if backend_ready else "Backend not available",
                 label_visibility="collapsed",
-                disabled=not backend_ready or bool(st.session_state.pending),
+                disabled=not backend_ready or bool(chat["pending"]),
             )
             sent = st.form_submit_button(
                 "Send",
-                disabled=not backend_ready or bool(st.session_state.pending),
+                disabled=not backend_ready or bool(chat["pending"]),
             )
         if sent and asked and asked.strip() and backend_ready:
-            st.session_state.pending = asked.strip()
+            active_chat()["pending"] = asked.strip()
             st.session_state.view = "chat"
             st.rerun()
 
 with refs:
     refs_slot = st.empty()
     refs_slot.markdown(
-        references_markup(st.session_state.turns),
+        references_markup(active_chat()["turns"]),
         unsafe_allow_html=True,
     )
 
@@ -1514,12 +1586,13 @@ with refs:
 # The question is already on screen, with a live status in pending_slot.
 # Finding the answer happens below. When it is ready, that same spot types
 # the reply out, and each new reference card follows on its own.
-question = st.session_state.pending
+chat = active_chat()
+question = chat["pending"]
 
 if question and backend_ready:
     already_cited = {
         reference_key(source)
-        for source in chat_references(st.session_state.turns)
+        for source in chat_references(chat["turns"])
     }
     try:
         chat_reply = small_talk_reply(question)
@@ -1535,6 +1608,14 @@ if question and backend_ready:
             result = step3.ask_question(
                 question, collection, embed_model, gemini_model,
                 quiet=True, return_details=True,
+                history=[
+                    {
+                        "question": earlier["question"],
+                        "answer": earlier["answer"],
+                        "smalltalk": earlier.get("smalltalk", False),
+                    }
+                    for earlier in chat["turns"]
+                ],
             )
             turn = {
                 "question": question,
@@ -1543,6 +1624,7 @@ if question and backend_ready:
                 "used": result["used"],
                 "smalltalk": False,
                 "period": result.get("period"),
+                "resolved_question": result.get("resolved_question", question),
             }
     except Exception as error:  # noqa: BLE001 - keep the chat usable
         turn = {
@@ -1556,12 +1638,13 @@ if question and backend_ready:
             "smalltalk": False,
         }
 
-    st.session_state.turns.append(turn)
-    st.session_state.pending = None
+    turn["answer"] = step3.cap_answer(turn["answer"])
+    chat["turns"].append(turn)
+    chat["pending"] = None
     if pending_slot is not None:
         with pending_slot:
             st.write_stream(reveal_answer(turn["answer"]))
         st.session_state.scroll_chat = True
     if refs_slot is not None:
-        reveal_new_references(refs_slot, st.session_state.turns, already_cited)
+        reveal_new_references(refs_slot, chat["turns"], already_cited)
     st.rerun()

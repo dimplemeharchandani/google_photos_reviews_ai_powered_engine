@@ -8,7 +8,9 @@ What this script does (in plain words):
 2. Loads the same "all-MiniLM-L6-v2" model, because a question has to be turned
    into numbers the SAME way the reviews were, or the comparison is meaningless.
 3. ask_question(question) then:
-   a. Turns the question into a vector.
+   a. If earlier messages were passed in, rewrites the latest one into a
+      standalone question (so "what about on iPhone?" still searches for the
+      topic from the previous turn), then turns THAT into a vector.
    b. Pulls the 8 most similar review chunks out of the database.
    c. GUARDRAIL: if even the best match is weak (below MIN_SIMILARITY), it does
       not call the AI at all. Nothing relevant was found, so there is nothing
@@ -65,6 +67,14 @@ PER_SOURCE_MIN_SIMILARITY = 0.45
 
 # The most chunks the AI is ever given for one question.
 MAX_EVIDENCE = 12
+
+# How many earlier question-and-answer pairs to carry into the next question.
+# Older turns are dropped so a long chat does not drown the latest message.
+MAX_HISTORY_TURNS = 10
+
+# Every reply is kept inside this length, on screen and in the next prompt.
+# The two stay the same text, and a long session cannot grow without a ceiling.
+ANSWER_CHAR_LIMIT = 1000
 
 # When a question asks about a particular period, we search this many chunks
 # before filtering by date. It has to be wide: the best matches overall may all
@@ -142,11 +152,26 @@ Follow these rules strictly:
 - Mention patterns across multiple items where relevant, and note if a pattern is based on only 1-2 items vs. many.
 - Where it matters, say which source a pattern comes from (for example, whether it appears mainly in Reddit posts or in Play Store reviews).
 - Some long posts were split into parts, marked "part 2 of 3". Treat those as excerpts from one longer post, not as separate people.
+- Keep the whole answer within """ + str(ANSWER_CHAR_LIMIT) + """ characters, and end on a complete sentence.
 
 User feedback:
 {reviews}
 
 Question: {question}"""
+
+# Used only when this question follows earlier ones. The rewritten line is what
+# we search with. The answer prompt still sees the user's own words.
+REWRITE_TEMPLATE = """Rewrite the user's latest message as one standalone question about Google Photos user feedback.
+
+Use the conversation only to resolve references such as "that", "it", "those", "what about", "on iPhone", or "tell me more".
+Keep any time period the user mentioned (for example "last year" or "in 2024").
+If the latest message is already a complete question, return it unchanged.
+Return only the rewritten question, with no explanation and no quotes.
+
+Conversation:
+{history}
+
+Latest message: {question}"""
 
 
 # ---------------------------------------------------------------------------
@@ -297,6 +322,82 @@ def generate_with_retry(gemini_model, prompt, attempts=MAX_ATTEMPTS):
             time.sleep(wait_seconds)
 
     return "(The Gemini API call failed after several retries.)"
+
+
+def _api_failed(text):
+    return bool(text) and text.startswith("(The Gemini API call failed")
+
+
+def cap_answer(text, limit=ANSWER_CHAR_LIMIT):
+    """Trims a reply so the screen and the next question share one text."""
+    text = (text or "").strip()
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rstrip()
+    if cut and cut[-1] in ".!?":
+        return cut
+    best = max(cut.rfind("."), cut.rfind("?"), cut.rfind("!"))
+    if best >= int(limit * 0.6):
+        return cut[: best + 1].rstrip()
+    trimmed = cut.rstrip(" ,;:")
+    if len(trimmed) >= limit:
+        trimmed = trimmed[: limit - 1].rstrip()
+    return trimmed + "…"
+
+
+def recent_turns(history, limit=MAX_HISTORY_TURNS):
+    """The latest real questions, dropping greetings and empty turns.
+
+    history is a list of dicts with "question" and "answer". A turn marked
+    smalltalk (hello, thanks, bye) is left out — it does not change what
+    the next search should look for.
+    """
+    if not history:
+        return []
+    cleaned = []
+    for turn in history:
+        question = (turn.get("question") or "").strip()
+        answer = (turn.get("answer") or "").strip()
+        if question and answer and not turn.get("smalltalk") and not _api_failed(answer):
+            cleaned.append({"question": question, "answer": answer})
+    return cleaned[-limit:]
+
+
+def format_history(turns):
+    """One readable block of earlier user/assistant pairs."""
+    lines = []
+    for turn in turns:
+        answer = " ".join(cap_answer(turn["answer"]).split())
+        lines.append(f"User: {turn['question']}\nAssistant: {answer}")
+    return "\n\n".join(lines)
+
+
+def _clean_rewritten(text, fallback):
+    """Keeps a one-line rewrite, or the original question if the call failed."""
+    if not text or _api_failed(text):
+        return fallback
+    line = next((ln.strip() for ln in text.splitlines() if ln.strip()), "")
+    line = re.sub(
+        r"^(rewritten question|standalone question|question)\s*:\s*",
+        "",
+        line,
+        flags=re.I,
+    ).strip().strip("\"'`")
+    if len(line) < 3 or len(line) > 500:
+        return fallback
+    return line
+
+
+def rewrite_question(question, history_text, gemini_model):
+    """Turns a follow-up into a question that makes sense on its own.
+
+    Search only sees the latest sentence. Without this step, "what about on
+    iPhone?" would be matched against those words and miss the topic of the
+    previous answer.
+    """
+    prompt = REWRITE_TEMPLATE.format(history=history_text, question=question)
+    rewritten = generate_with_retry(gemini_model, prompt)
+    return _clean_rewritten(rewritten, question)
 
 
 # ---------------------------------------------------------------------------
@@ -497,7 +598,7 @@ def retrieve(collection, vector, start=None, end=None):
 
 
 def ask_question(question, collection, embed_model, gemini_model,
-                 quiet=False, return_details=False):
+                 quiet=False, return_details=False, history=None):
     """Answers a question using only the review data.
 
     quiet          - don't print anything (used by the web app, which displays
@@ -505,6 +606,10 @@ def ask_question(question, collection, embed_model, gemini_model,
     return_details - return a dictionary with the answer AND the sources behind
                      it, instead of just the answer text. The web app needs the
                      sources to show its "View sources" panel.
+    history        - earlier turns in this chat, as dicts with "question" and
+                     "answer". The last few are used to understand follow-ups.
+                     Omit it (or pass nothing) and the question is answered
+                     on its own, which is what the test questions do.
 
     Default behaviour is unchanged: print everything, return the answer text.
     """
@@ -516,13 +621,27 @@ def ask_question(question, collection, embed_model, gemini_model,
     say(f"QUESTION: {question}")
     say("=" * 78)
 
-    # a. Did the question ask about a particular stretch of time?
-    start, end, period = parse_date_range(question)
+    # a. A follow-up only makes sense together with what was just said.
+    #    Rewrite it into a full question BEFORE searching, then look for a
+    #    time period in that full question (or in the user's own words).
+    prior = recent_turns(history)
+    history_text = format_history(prior) if prior else ""
+    search_question = question
+    if prior:
+        say(f"\n(using the last {len(prior)} message"
+            f"{'s' if len(prior) != 1 else ''} in this chat)")
+        search_question = rewrite_question(question, history_text, gemini_model)
+        if search_question != question:
+            say(f"(searching as: {search_question})")
+
+    start, end, period = parse_date_range(search_question)
+    if not period:
+        start, end, period = parse_date_range(question)
     if period:
         say(f"\n(time period detected: {period} -> {start or 'any'} .. {end or 'any'})")
 
-    # b. Embed the question and fetch the most similar chunks.
-    question_vector = embed_model.encode([question])[0].tolist()
+    # b. Embed the standalone question and fetch the most similar chunks.
+    question_vector = embed_model.encode([search_question])[0].tolist()
     documents, metadatas, similarities = retrieve(collection, question_vector, start, end)
 
     best_similarity = max(similarities) if similarities else 0.0
@@ -538,6 +657,7 @@ def ask_question(question, collection, embed_model, gemini_model,
             "period": period,
             "period_start": start,
             "period_end": end,
+            "resolved_question": search_question,
             "sources": [
                 {
                     "url": metadata.get("url", ""),
@@ -574,7 +694,23 @@ def ask_question(question, collection, embed_model, gemini_model,
     numbered_reviews = "\n".join(
         f"{i}. {document}" for i, document in enumerate(documents, start=1)
     )
-    prompt = PROMPT_TEMPLATE.format(reviews=numbered_reviews, question=question)
+    asked = question
+    if search_question.strip() != question.strip():
+        asked = (
+            f"{question}\n\n"
+            "The user is following up on the conversation. Treat their message as "
+            "this standalone question, which was also used to find the feedback above:\n"
+            f"{search_question}"
+        )
+    prompt = PROMPT_TEMPLATE.format(reviews=numbered_reviews, question=asked)
+    if history_text:
+        prompt += (
+            "\n\nEarlier in this conversation:\n"
+            f"{history_text}\n\n"
+            "Use that conversation only to understand what the latest message refers to. "
+            "Do not use earlier answers as evidence, and do not repeat them unless the "
+            "user asked you to."
+        )
 
     if period:
         # Every item below is already inside the period, but say so explicitly
@@ -587,7 +723,7 @@ def ask_question(question, collection, embed_model, gemini_model,
 
     # e. Ask Gemini.
     say(f"\n(best match {best_similarity:.3f} - above threshold, so the AI was called)")
-    answer = generate_with_retry(gemini_model, prompt)
+    answer = cap_answer(generate_with_retry(gemini_model, prompt))
     say(f"\nANSWER:\n{answer}\n")
 
     # f. Always show the evidence behind the answer.
@@ -632,6 +768,8 @@ def interactive_loop(collection, embed_model, gemini_model):
     print("# The test questions are done. Now it's your turn.")
     print("#" * 78)
 
+    history = []
+
     while True:
         print("\nAsk your own question (or type 'quit' to stop):")
 
@@ -650,7 +788,13 @@ def interactive_loop(collection, embed_model, gemini_model):
             print("(Nothing typed - try asking something about the reviews.)")
             continue
 
-        ask_question(question, collection, embed_model, gemini_model)
+        answer = ask_question(
+            question, collection, embed_model, gemini_model, history=history,
+        )
+        if isinstance(answer, str) and not _api_failed(answer):
+            history.append({"question": question, "answer": answer})
+            if len(history) > MAX_HISTORY_TURNS:
+                history = history[-MAX_HISTORY_TURNS:]
 
 
 # ---------------------------------------------------------------------------
