@@ -976,162 +976,177 @@ st.markdown(
       [data-testid="stAppViewContainer"]:has(.flow) .refs-card,
       [data-testid="stAppViewContainer"]:has(.st-key-library) .refs-card { display: none !important; }
 
-      .flow { max-width: 820px; margin: .6rem auto 2rem; }
-      .stage {
+      .flow { max-width: 1080px; margin: .2rem auto 2.5rem; }
+      .flow-head { text-align: center; max-width: 640px; margin: .15rem auto 2rem; }
+      .flow-title {
+        font-size: 1.7rem;
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        color: #202124;
+        margin: 0;
+      }
+      .flow-lead {
+        margin: .65rem auto 0;
+        color: var(--muted);
+        font-size: .98rem;
+        line-height: 1.5;
+      }
+      .flow-sec { margin-top: 2.15rem; }
+      .kicker {
+        margin: 0 0 .28rem;
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: #1a73e8;
+      }
+      .flow-h {
+        margin: 0;
+        font-size: 1.22rem;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        color: #202124;
+      }
+      .flow-sub {
+        margin: .35rem 0 .95rem;
+        max-width: 42rem;
+        color: var(--muted);
+        font-size: .92rem;
+        line-height: 1.45;
+      }
+      .steps {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr);
+        align-items: stretch;
+        gap: 8px;
+      }
+      .step {
         background: #fff;
-        border: 1.5px solid #80868b;
-        border-radius: 16px;
-        padding: 20px 22px 22px;
+        border: 1px solid #e3e6ea;
+        border-top: 3px solid var(--c, #4285F4);
+        border-radius: 14px;
+        padding: 14px 14px 16px;
         box-shadow: 0 1px 2px rgba(32, 33, 36, .04);
       }
-      .stage-top {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        margin-bottom: 20px;
+      .step-done {
+        background: #f3faf5;
+        border-color: #ceead6;
       }
-      .num {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        display: inline-flex;
+      .step-ico {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: var(--soft, #e8f0fe);
+        color: var(--c, #4285F4);
+        display: flex;
         align-items: center;
         justify-content: center;
-        flex: 0 0 26px;
-        margin-top: 1px;
-        font-size: 13px;
+        margin-bottom: 12px;
+      }
+      .step-ico svg { width: 16px; height: 16px; display: block; }
+      .step-label {
+        font-size: .68rem;
         font-weight: 600;
-        color: #fff;
-        line-height: 1;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--c, #4285F4);
       }
-      .n-blue { background: #4285F4; }
-      .n-red { background: #EA4335; }
-      .n-yellow { background: #FBBC04; color: #202124; }
-      .n-green { background: #34A853; }
-      .stage-title {
-        font-size: calc(1.02rem + 1px);
-        font-weight: 500;
-        letter-spacing: -0.01em;
-        color: var(--ink);
-        line-height: 1.25;
-      }
-      .stage-sub {
-        margin-top: 2px;
-        color: var(--muted);
-        font-size: .86rem;
-        line-height: 1.4;
-      }
-      .row {
-        display: flex;
-        align-items: stretch;
-        gap: 14px;
-      }
-      .block {
-        flex: 1 1 0;
-        min-width: 0;
-        background: #fff;
-        border: 1.5px solid #80868b;
-        border-top: 3px solid var(--c, #4285F4);
-        border-radius: 12px;
-        padding: 16px 14px 15px;
-        text-align: center;
-      }
-      .block b {
+      .step b {
         display: block;
-        font-size: .86rem;
+        margin-top: 3px;
+        font-size: .92rem;
         font-weight: 600;
         color: #202124;
-        line-height: 1.35;
+        line-height: 1.3;
       }
-      .block span {
+      .step span {
         display: block;
         margin-top: 6px;
         color: var(--muted);
-        font-size: .78rem;
-        line-height: 1.4;
+        font-size: .8rem;
+        line-height: 1.42;
       }
-      .c-blue { --c: #4285F4; }
-      .c-red { --c: #EA4335; }
-      .c-yellow { --c: #FBBC04; }
-      .c-green { --c: #34A853; }
-      .harr {
-        flex: 0 0 40px;
+      .s-blue { --c: #4285F4; --soft: #e8f0fe; }
+      .s-red { --c: #EA4335; --soft: #fce8e6; }
+      .s-yellow { --c: #F9AB00; --soft: #fef7e0; }
+      .s-green { --c: #34A853; --soft: #e6f4ea; }
+      .arrow {
         align-self: center;
         height: 2px;
-        margin: 0;
-        background: #5f6368;
+        background: #dadce0;
         position: relative;
       }
-      .harr::after {
+      .arrow::after {
         content: "";
         position: absolute;
         right: -1px;
         top: 50%;
-        width: 8px;
-        height: 8px;
-        border-top: 2px solid #5f6368;
-        border-right: 2px solid #5f6368;
+        width: 7px;
+        height: 7px;
+        border-top: 2px solid #9aa0a6;
+        border-right: 2px solid #9aa0a6;
         transform: translateY(-50%) rotate(45deg);
       }
-      .varr {
+      .flow-note {
         display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-top: 12px;
+        padding: 12px 14px;
+        background: #f8f9fa;
+        border: 1px solid #eceff1;
+        border-radius: 12px;
+        color: #5f6368;
+        font-size: .84rem;
+        line-height: 1.45;
+      }
+      .flow-note svg { flex: 0 0 16px; margin-top: 2px; color: #1a73e8; }
+      .rules {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .rule {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        background: #fff;
+        border: 1px solid #e3e6ea;
+        border-radius: 14px;
+        padding: 14px 16px 15px;
+      }
+      .rule-ico {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--soft, #e8f0fe);
+        color: var(--c, #4285F4);
+        display: flex;
+        align-items: center;
         justify-content: center;
-        height: 56px;
+        flex: 0 0 28px;
       }
-      .varr span {
-        width: 2px;
-        height: 34px;
-        margin-top: 8px;
-        background: #5f6368;
-        position: relative;
-      }
-      .varr span::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: 0;
-        width: 8px;
-        height: 8px;
-        border-right: 2px solid #5f6368;
-        border-bottom: 2px solid #5f6368;
-        transform: translate(-50%, 3px) rotate(45deg);
-      }
-      .then {
-        margin: 22px 0 14px;
-        text-align: center;
-        font-size: .72rem;
+      .rule-ico svg { width: 15px; height: 15px; display: block; }
+      .rule b {
+        display: block;
+        font-size: .9rem;
         font-weight: 600;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        color: #5f6368;
+        color: #202124;
+        line-height: 1.3;
       }
-      .or {
-        flex: 0 0 auto;
-        align-self: center;
-        padding: 0 16px;
-        font-size: .82rem;
-        color: #5f6368;
+      .rule span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: .8rem;
+        line-height: 1.42;
       }
-      @media (max-width: 860px) {
-        .row { flex-direction: column; align-items: stretch; gap: 14px; }
-        .harr {
-          width: 2px;
-          height: 28px;
-          flex: 0 0 28px;
-          margin: 0 auto;
-          background: #5f6368;
-        }
-        .harr::after {
-          right: auto;
-          left: 50%;
-          top: auto;
-          bottom: 0;
-          border-top: none;
-          border-right: 2px solid #5f6368;
-          border-bottom: 2px solid #5f6368;
-          transform: translate(-50%, 3px) rotate(45deg);
-        }
-        .or { padding: 4px 0; text-align: center; }
+      @media (max-width: 1180px) {
+        .steps { grid-template-columns: 1fr 1fr; }
+        .arrow { display: none; }
+      }
+      @media (max-width: 720px) {
+        .steps, .rules { grid-template-columns: 1fr; }
       }
 
       .st-key-library { max-width: 820px; }
@@ -1911,85 +1926,158 @@ with main:
                     st.rerun()
 
     elif view == "workflow":
-        st.markdown("<div class='page-title'>How it works</div>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='page-lead'>Real reviews become an answer. "
-            "If nothing in the library is close enough, we say so.</div>",
-            unsafe_allow_html=True,
-        )
         st.markdown(
             """
             <div class="flow">
-              <div class="stage">
-                <div class="stage-top">
-                  <span class="num n-blue">1</span>
-                  <div>
-                    <div class="stage-title">Gather the stories</div>
-                    <div class="stage-sub">We collect what people already wrote about Google Photos.</div>
+              <div class="flow-head">
+                <div class="flow-title">How it works</div>
+                <p class="flow-lead">People already wrote about failing to find something in Google Photos. Those stories are prepared once. After that, each question looks for stories about the same idea, and the reply is written only from what turned up. When the match is weak, you get a plain note that there is not enough evidence.</p>
+              </div>
+
+              <section class="flow-sec">
+                <p class="kicker">Prepared once, before any question</p>
+                <div class="flow-h">Getting the library ready</div>
+                <p class="flow-sub">Reviews and posts are collected, trimmed down to search problems, and stored so a later question can find them quickly. This runs again only when the library itself changes.</p>
+                <div class="steps">
+                  <div class="step s-blue">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="M4 10h16"/><path d="M8 6v12"/></svg></div>
+                    <div class="step-label">Step 1</div>
+                    <b>Four places, one list</b>
+                    <span>Play Store reviews, Reddit posts, YouTube comments, and Google Photos forum threads are pulled together, with the same details kept for each.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-red">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg></div>
+                    <div class="step-label">Step 2</div>
+                    <b>Search failures only</b>
+                    <span>A story stays if someone tried to look for a photo or video and the search failed, returned the wrong things, or dragged on. Praise and unrelated complaints drop out.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-yellow">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13l-7 7-9-9V4h7z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg></div>
+                    <div class="step-label">Step 3</div>
+                    <b>Notes taken from the words</b>
+                    <span>Where the text is clear, we note what went wrong, how much they remember, how old the photo seems, and how long they searched. A long post is split into overlapping pieces so one sentence can still match.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-green">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></div>
+                    <div class="step-label">Step 4</div>
+                    <b>Stored by the idea</b>
+                    <span>Each piece becomes a vector, a row of numbers that stands in for the idea, not the exact wording. The link to the original page stays attached.</span>
                   </div>
                 </div>
-                <div class="row">
-                  <div class="block c-blue"><b>Play Store</b><span>Photos reviews</span></div>
-                  <div class="block c-red"><b>Reddit</b><span>Posts</span></div>
-                  <div class="block c-yellow"><b>YouTube</b><span>Comments</span></div>
-                  <div class="block c-green"><b>Forum</b><span>Help posts</span></div>
-                </div>
-              </div>
-              <div class="varr"><span></span></div>
-              <div class="stage">
-                <div class="stage-top">
-                  <span class="num n-red">2</span>
-                  <div>
-                    <div class="stage-title">Keep what matters</div>
-                    <div class="stage-sub">Only stories about failing to find a photo or video stay in.</div>
+              </section>
+
+              <section class="flow-sec">
+                <p class="kicker">Each time you ask</p>
+                <div class="flow-h">Matching your question to those stories</div>
+                <p class="flow-sub">You do not need the same words the reviewer used. The search ranks stories by how close the idea is, then holds a small set for the reply.</p>
+                <div class="steps">
+                  <div class="step s-blue">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14v9H8l-3 3z"/></svg></div>
+                    <div class="step-label">Step 1</div>
+                    <b>Ask in your own words</b>
+                    <span>Anything about how people fail to find photos works, including a follow-up such as "what about on iPhone?".</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-red">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7H4v4"/><path d="M4 11a8 8 0 1 0 2-5"/></svg></div>
+                    <div class="step-label">Step 2</div>
+                    <b>Follow-ups get filled in</b>
+                    <span>If this chat already has earlier turns, they are joined to the latest message, so "that" still points at the right topic. A period you mention, like "last year", is picked up at the same time.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-yellow">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6"/><path d="M20 20l-4.3-4.3"/></svg></div>
+                    <div class="step-label">Step 3</div>
+                    <b>Ideas are lined up</b>
+                    <span>The question is converted the same way the stories were, then scored against the whole library.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-green">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h12"/><path d="M8 12h12"/><path d="M8 17h12"/><path d="M4 7h.01"/><path d="M4 12h.01"/><path d="M4 17h.01"/></svg></div>
+                    <div class="step-label">Step 4</div>
+                    <b>A fair short list</b>
+                    <span>The closest pieces stay. Reddit, YouTube, and the forum also add a few of their own best matches, because Play Store reviews would otherwise take almost every slot.</span>
                   </div>
                 </div>
-                <div class="row">
-                  <div class="block c-blue"><b>Search problems</b><span>The rest is left out</span></div>
-                  <div class="harr"></div>
-                  <div class="block c-red"><b>One shared list</b><span>Same details for every source</span></div>
-                  <div class="harr"></div>
-                  <div class="block c-yellow"><b>Plain tags</b><span>What failed, what they remember, how old the photo is</span></div>
+                <div class="flow-note">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+                  <span>Name a year or a stretch of time, and only feedback written then remains. That lookup runs on this computer. A model on the internet is called only when it is time to write the reply.</span>
                 </div>
-              </div>
-              <div class="varr"><span></span></div>
-              <div class="stage">
-                <div class="stage-top">
-                  <span class="num n-yellow">3</span>
-                  <div>
-                    <div class="stage-title">Search by meaning</div>
-                    <div class="stage-sub">Called RAG. A question can find a story even when the words are different.</div>
+              </section>
+
+              <section class="flow-sec">
+                <p class="kicker">The reply, if the match is good enough</p>
+                <div class="flow-h">Written from those stories, or not at all</div>
+                <p class="flow-sub">The writer only sees the short list. If nothing is close, or that time period is empty, the model is never called.</p>
+                <div class="steps">
+                  <div class="step s-blue">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M9 9l6 6"/><path d="M15 9l-6 6"/></svg></div>
+                    <div class="step-label">Step 1</div>
+                    <b>Poor fits are refused</b>
+                    <span>The closest story can still be a stretch. In that case, or when nothing was posted in the period you asked about, the app says there is not enough evidence.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-red">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 13h5"/><path d="M10 17h3"/></svg></div>
+                    <div class="step-label">Step 2</div>
+                    <b>Only the short list is opened</b>
+                    <span>Past that check, the model reads the stories that made the cut. Earlier answers in the chat explain your wording. They are not proof.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-yellow">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></div>
+                    <div class="step-label">Step 3</div>
+                    <b>A brief reply</b>
+                    <span>It restates what people reported, says when a pattern rests on only one or two stories, and turns down questions that are not about Google Photos search.</span>
+                  </div>
+                  <div class="arrow"></div>
+                  <div class="step s-green step-done">
+                    <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg></div>
+                    <div class="step-label">Step 4</div>
+                    <b>Links stay in view</b>
+                    <span>The stories used for the reply show up on the right, each pointing at the original page, so a claim can be checked.</span>
                   </div>
                 </div>
-                <div class="row">
-                  <div class="block c-blue"><b>Short pieces</b><span>A long post is cut up, so one sentence can still be found</span></div>
-                  <div class="harr"></div>
-                  <div class="block c-red"><b>Match the idea</b><span>“Old photo” sits near “picture from years ago”</span></div>
-                  <div class="harr"></div>
-                  <div class="block c-green"><b>Keep the link</b><span>Every piece still points back to the original</span></div>
-                </div>
-              </div>
-              <div class="varr"><span></span></div>
-              <div class="stage">
-                <div class="stage-top">
-                  <span class="num n-green">4</span>
-                  <div>
-                    <div class="stage-title">Answer your question</div>
-                    <div class="stage-sub">The reply uses only the stories that were found. Nothing is invented.</div>
+              </section>
+
+              <section class="flow-sec">
+                <p class="kicker">The guardrails</p>
+                <div class="flow-h">How a reply stays tied to the evidence</div>
+                <p class="flow-sub">These limits keep a fluent answer from wandering off the reviews that were actually found.</p>
+                <div class="rules">
+                  <div class="rule s-blue">
+                    <div class="rule-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg></div>
+                    <div>
+                      <b>Nothing from outside the short list</b>
+                      <span>If the stories do not support a claim, the reply says so. It does not fill the gap from general knowledge.</span>
+                    </div>
+                  </div>
+                  <div class="rule s-red">
+                    <div class="rule-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7H5v6c0 2 1.2 3 3 3"/><path d="M19 7h-3v6c0 2 1.2 3 3 3"/></svg></div>
+                    <div>
+                      <b>No made-up quotations</b>
+                      <span>Wording is restated, not presented as a direct quote. Pieces cut from one long post still belong to one person.</span>
+                    </div>
+                  </div>
+                  <div class="rule s-yellow">
+                    <div class="rule-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7H4v4"/><path d="M4 11a8 8 0 1 0 2-5"/><path d="M12 12v4"/><path d="M12 8h.01"/></svg></div>
+                    <div>
+                      <b>Chat history is for context</b>
+                      <span>Earlier messages clarify what you are asking now. They are not extra evidence, and a previous reply is left alone unless you ask for it.</span>
+                    </div>
+                  </div>
+                  <div class="rule s-green">
+                    <div class="rule-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></div>
+                    <div>
+                      <b>The time you named is the frame</b>
+                      <span>If you asked about a period, the reply stays inside it. Answers are kept short and finish on a full sentence.</span>
+                    </div>
                   </div>
                 </div>
-                <div class="row">
-                  <div class="block c-blue"><b>You ask</b><span>Anything about finding photos</span></div>
-                  <div class="harr"></div>
-                  <div class="block c-yellow"><b>Closest stories</b><span>The ones that mean the same thing</span></div>
-                </div>
-                <div class="then">Then one of two things</div>
-                <div class="row">
-                  <div class="block c-green"><b>Close enough</b><span>A short answer, written only from those stories, with links</span></div>
-                  <div class="or">or</div>
-                  <div class="block c-red"><b>Not close enough</b><span>We say we don’t know, instead of guessing</span></div>
-                </div>
-              </div>
+              </section>
             </div>
             """,
             unsafe_allow_html=True,
